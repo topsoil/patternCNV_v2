@@ -18,6 +18,7 @@ else
 	
 	# get paths to local installs of tools
 	script_path=$(grep "^PATTERNCNV=" $tool_config | cut -d"=" -f2)
+	script_path=${script_path}/bam2wig
 	samtools=$(grep "^SAMTOOLS=" $tool_config | cut -d"=" -f2)
 	bedtools=$(grep "^BEDTOOLS=" $tool_config | cut -d"=" -f2)
 
@@ -42,7 +43,7 @@ else
 	
 	echo "Sorting exon bed file..."
 	# sort, merge exons
-	$bedtools/sortBed -i $exon_bed | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4}' | $bedtools/mergeBed $name_col > $output_file.all_exons_merged.tmp.bed
+	cat $exon_bed | sort -k1,1 -k2,2g | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4}' | $bedtools/mergeBed $name_col > $output_file.all_exons_merged.tmp.bed
 
 	if [ $column_count -lt 4 ]
 	then

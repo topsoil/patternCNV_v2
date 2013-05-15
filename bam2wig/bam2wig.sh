@@ -21,6 +21,7 @@ else
 
 	# get paths to local installs of tools
 	script_path=$(grep "^PATTERNCNV=" $tool_config | cut -d"=" -f2)
+	script_path=${script_path}/bam2wig
 	samtools=$(grep "^SAMTOOLS=" $tool_config | cut -d"=" -f2)
 	bedtools=$(grep "^BEDTOOLS=" $tool_config | cut -d"=" -f2)
 
@@ -90,7 +91,7 @@ else
 	rm $output_dir/$filename.exons_binned.bed
 
 	# sort bed to match exon key order (very important)
-	sortBed -i $output_dir/$filename.coverage.txt > $output_dir/$filename.coverage.sort.txt
+	cat $output_dir/$filename.coverage.txt | sort -k1,1 -k2,2g > $output_dir/$filename.coverage.sort.txt
 
 	# convert bed to wig
 	coverage_col=$(head -1 $output_dir/$filename.coverage.sort.txt | awk '{print NF}')

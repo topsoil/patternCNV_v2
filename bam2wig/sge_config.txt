@@ -1,0 +1,14 @@
+EMAIL=evans.jared@mayo.edu
+QUEUE=1-day
+OUTPUT_DIR=/data2/bsi/staff_analysis/m088341/tools/PatternCNV/sge_test
+
+BAMS_CONFIG=/projects/bsi/bioinf_int/s112423.PatternCNV/trunk/bam2wig/sge_bams_config.txt
+CAPTUREKIT_BED=/data2/bsi/staff_analysis/m092469/projects/chr22.sim/SureSelect_All_Exon_V4+UTRs_with_annotation_hg19_chr22_q13_2.bed
+EXON_BED=/data2/bsi/staff_analysis/m088341/tools/PatternCNV/simulated_test/refflat_exons_hg19.chr22_q13_2.bed
+
+BIN_SIZE=10
+MIN_MAPPING_QUAL=20
+PATTERNCNV=/projects/bsi/bioinf_int/s112423.PatternCNV/trunk
+SAMTOOLS=/projects/bsi/bictools/apps/alignment/samtools/samtools-0.1.18/samtools
+BEDTOOLS=/projects/bsi/bictools/apps/misc/BEDTools/2.15.0/bin
+QSUB_MEMORY=-l h_vmem=1G -l h_stack=10M

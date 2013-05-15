@@ -8,7 +8,7 @@ patCNV.plot.autosome.CNV <- function( cnv_res, session_info, sample_name, chr_le
    
    chr_length_vec <- chr_length_info
     
-   sel_sample_idx <- which(germline.cnv_res$sample.name==sample_name)
+   sel_sample_idx <- which(cnv_res$sample.name==sample_name)
    
    if(ref_avg_type=='median')	
      {ref_avg_RPKM <- unlist(read.delim(session_info$Misc$median_RPKM_file,header=FALSE))}

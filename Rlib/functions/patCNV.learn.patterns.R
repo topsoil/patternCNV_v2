@@ -34,7 +34,7 @@ patCNV.learn.patterns <- function( session_info, covg_info,
   
   RKM_vec <- bin_size*total_count_vec[sample_ID_vec]/1e9
   
-  # computing RPKM based on total counts of selected samples
+  # computing RPKM based on total bp counts of selected samples
   # RPKM = read/ ( (kb) * (total_counts/1e6) )
   #      = read/ (bin_size/1e3 * total_counts/1e6)
   #      = read/ (bin_size*total_counts/1e9)
@@ -42,7 +42,7 @@ patCNV.learn.patterns <- function( session_info, covg_info,
   N_exons <- length(exon_bin_vec)
   N_samples <- length(wig_filename_vec)
   cat('\n', N_samples,' samples are selected for learning patterns.\n',sep='')
-  cat('\n Total counts information for selected samples: \n')
+  cat('\n Total bp counts information for selected samples: \n')
   print(total_count_vec[sample_ID_vec])
   
   
