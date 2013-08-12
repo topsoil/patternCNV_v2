@@ -2,7 +2,7 @@ patCNV.plot.autosome.CNV <- function( cnv_res, session_info, sample_name, chr_le
                                 capture.only=TRUE, min_ref_avg_RPKM=3,ref_avg_type='median',
                                 ylim=c(-3,3),cex=0.6,output_suffix='_whole_exome_CNV',
 				xlab='Mb',ylab='log2-ratio',
-                          color_vec=c('red','blue','green','grey','brown','purple','black'),
+                          color_vec=c('red','blue','green','orange','brown','purple','black'),
 				... )
 {
    
@@ -16,6 +16,8 @@ patCNV.plot.autosome.CNV <- function( cnv_res, session_info, sample_name, chr_le
    if(ref_avg_type=='mean')	
      {ref_avg_RPKM <- unlist(read.delim(session_info$Misc$mean_RPKM_file,header=FALSE))} 
     
+   if(ref_avg_type=='none')
+     { ref_avg_RPKM <- mat.or.vec(nrow(session_info$exon_info),1)+123 }
 
   chr_color_vec <- rep(color_vec,ceiling(22/length(color_vec))) # repeat color patterns
   

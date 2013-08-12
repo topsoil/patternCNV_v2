@@ -67,6 +67,8 @@ patCNV.compute.CNV.multi <- function( session_info, sample.type=NULL,
             }
 	}
 
+   cat('\n')	
+
   return(
 	list(CNV=CNV.mtx,sample.ID=sample_ID_vec,sample.name=sample_name_vec)
 	)

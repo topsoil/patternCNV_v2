@@ -46,7 +46,7 @@ patCNV.scan.covg.multi <- function(session_info, sample.type=NULL, bin_size=10, 
                               bin_size=bin_size,is.plot=is.plot,plot_output_DIR=plot_output_DIR)
                                             
     exon_count_mtx[,k] <- count_vec
-    total_count_vec[k] <- sum(count_vec) # total bp counts
+    total_count_vec[k] <- sum(count_vec,na.rm=TRUE) # total bp counts
     exon_RPKM_mtx[,k] <- (count_vec*1e9)/(bin_size*exon_bin_vec*total_count_vec[k])
       # RPKM = count_in_exon/ ( (kb) * (total_counts/1e6) )
       #      = count_in_exon/ ( (N_bins * bin_size/1e3) * total_counts/1e6)

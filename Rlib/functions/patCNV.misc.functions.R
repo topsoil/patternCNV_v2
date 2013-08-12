@@ -1,3 +1,15 @@
+#========================================================================
+patCNV.DIR.str <- function( DIR_name )
+{
+  tmp_str <- ''
+  if (substr(DIR_name,nchar(DIR_name),nchar(DIR_name))=="/")  
+   { tmp_str <- DIR_name}  else {
+     tmp_str <- paste(substr(DIR_name,1,nchar(DIR_name)),'/',sep='')
+   }
+  return(tmp_str)
+}
+
+
 #=========================================================================
 patCNV.create.DIR <- function( DIR_name )
 {
@@ -41,8 +53,9 @@ patCNV.load.Rlib <- function( lib_name, lib_type=c('CRAN','Bioconductor') )
 patCNV.data <- function(data_name, DIR_name=patCNV.install.DIR)
 {
 	tmp.file <- paste(DIR_name,'/data/',data_name,sep='')
- 	cat(tmp.file)
+ 	cat(tmp.file,'... loaded \n')
 	load(tmp.file,parent.frame(n = 1))
+        cat('\n')	
 }
 
 

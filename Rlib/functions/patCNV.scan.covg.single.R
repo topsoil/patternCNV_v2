@@ -9,9 +9,20 @@ patCNV.scan.covg.single <- function(wig_filename,sample_ID,exon_bin_vec,is_captu
 
   N_exons <- length(exon_bin_vec)
   exon_header_vec <- which(is.na(r_int))
-  exon_start_vec <- exon_header_vec + 1
-  exon_end_vec <- c(exon_header_vec[2:N_exons]-1,length(r_int))
   
+  if(length(exon_header_vec)!=N_exons)
+  {
+    cat('Number of exons differs between exon key file and wig file',wig_filename,'\n')
+    cat('Expected # of exons from key file:',N_exons,'\n')
+    cat('Observed # of exons in wig file:',length(exon_header_vec),'\n')
+    cat('Please check and re-run BAM2WIG conversion if needed. \n')
+    stop('Number of exons mismatch \n')
+  }
+  
+  exon_start_vec <- exon_header_vec + 1
+  exon_end_vec <- c(exon_header_vec[2:N_exons]-1,length(r_int)) # orginal
+  
+    
   exon_vec <- mat.or.vec(N_exons,1)
   for (k in 1:N_exons)
   {

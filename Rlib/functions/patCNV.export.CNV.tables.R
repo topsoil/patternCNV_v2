@@ -1,4 +1,4 @@
-patCNV.export.CNV.tables <- function(FDR_res, covg_info, session_info, 
+patCNV.export.CNV.tables <- function(session_info, covg_info, FDR_res,
 				ref_avg_type='median', min_ref_avg_RPKM=3,
                                output_suffix='_CNV_table.txt',capture.only=TRUE,
                                FDR_type='localFDR',FDR_threshold=1e-3)

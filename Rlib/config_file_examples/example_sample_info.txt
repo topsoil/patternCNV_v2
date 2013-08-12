@@ -1,0 +1,7 @@
+sample.name	subject.ID	sample.type	file.name
+X01-Tumor	A	Somatic	/home/test/wigs/X01-T.bam.coverage.wig
+X01-Normal	A	Germline	/home/test/wigs/X01-N.bam.coverage.wig
+X02-Tumor	B	Somatic	/home/test/wigs/X02-T.bam.coverage.wig
+X02-Normal	B	Germline	/home/test/wigs/X02-N.bam.coverage.wig
+X03-Tumor	C	Somatic	/home/test/wigs/X03-T.bam.coverage.wig
+X03-Normal	C	Germline	/home/test/wigs/X03-N.bam.coverage.wig

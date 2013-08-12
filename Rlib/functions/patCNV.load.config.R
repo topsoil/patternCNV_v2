@@ -13,8 +13,8 @@ patCNV.load.config <- function( config_file )
 
  #=== DIR information
  DIR_info <- list()
- DIR_info$plot_output_DIR <- plot_output_DIR
- DIR_info$txt_output_DIR <- txt_output_DIR
+ DIR_info$plot_output_DIR <- patCNV.DIR.str(plot_output_DIR)
+ DIR_info$txt_output_DIR <- patCNV.DIR.str(txt_output_DIR)
   
  
  #=== detecting existence of important files

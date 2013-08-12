@@ -1,7 +1,7 @@
 
 patCNV.install.DIR <- getwd()
 
-#========== Apr. 26. 2013
+#========== Aug. 9. 2013
 
 function_vec <- c(
 		  "patCNV.misc.functions.R",
@@ -11,7 +11,9 @@ function_vec <- c(
 		  "patCNV.scan.covg.multi.R", 		  
 		  "patCNV.coverage.QC.R",
 		  "patCNV.chr.coverage.QC.R",
-
+		  
+      
+      
 	          "patCNV.learn.patterns.R",
 
 		  "patCNV.compute.CNV.single.R",
@@ -19,6 +21,9 @@ function_vec <- c(
 		  "patCNV.fit.null.model.R" ,
 		  "patCNV.estimate.FDR.R",
 
+      
+      "patCNV.export.simple.tables.R",
+      
 		   "patCNV.export.CNV.tables.R",
 		   "patCNV.plot.Chr.CNV.R",
 		   "patCNV.plot.autosome.CNV.R",
@@ -33,5 +38,5 @@ for (i in 1:length(function_vec))
 }
 
 cat('\n ========================================================= \n')
-cat('\n R functions of pattern-CNV have been successfully loaded! \n')
+cat('\n R functions of pattern-CNV (ver 0.98) have been successfully loaded! \n')
 cat('\n ========================================================= \n')

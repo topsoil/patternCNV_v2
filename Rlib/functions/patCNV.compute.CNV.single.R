@@ -34,7 +34,7 @@ patCNV.compute.CNV.single <- function( session_info, sample_name,
               patCNV.scan.covg.single(ref_avg_wigfile,germline_sample_ID,
 			exon_bin_vec,is_capture_vec,is.plot=FALSE, bin_size=bin_size)
 
-		  germline.total_count <- sum(germline.exon_vec)
+		  germline.total_count <- sum(germline.exon_vec,na.rm=TRUE)
 	  	  germline.RPKM_deno <- bin_size*germline.total_count/1e9
 	}
 
@@ -45,7 +45,7 @@ patCNV.compute.CNV.single <- function( session_info, sample_name,
       patCNV.scan.covg.single(wig_filename,sample_ID,exon_bin_vec,is_capture_vec,
                              is.plot=FALSE, bin_size=bin_size)
       
-  total_count <- sum(exon_vec)  
+  total_count <- sum(exon_vec,na.rm=TRUE)  
   
 
    N_exons <- length(exon_bin_vec)
@@ -103,7 +103,7 @@ patCNV.compute.CNV.single <- function( session_info, sample_name,
   
     #========= computing CNV 
     weight_vec <- 1/(SD_vec+small_delta)^2
-    CNV_vec[k] <- sum( (y_vec-mean_vec) * weight_vec )/sum(weight_vec)
+    CNV_vec[k] <- sum( (y_vec-mean_vec) * weight_vec )/sum(weight_vec,na.rm=TRUE)
  #   CNV_SD_vec[k] <- sqrt(1/sum(weight_vec))
      
     
@@ -145,7 +145,7 @@ patCNV.compute.CNV.single <- function( session_info, sample_name,
   
     #========= computing CNV 
     weight_vec <- 1/(SD_vec+small_delta)^2
-    CNV_vec[k] <- sum( (y_vec-mean_vec) * weight_vec )/sum(weight_vec)
+    CNV_vec[k] <- sum( (y_vec-mean_vec) * weight_vec )/sum(weight_vec,na.rm=TRUE)
  #   CNV_SD_vec[k] <- sqrt(1/sum(weight_vec))
      
     
