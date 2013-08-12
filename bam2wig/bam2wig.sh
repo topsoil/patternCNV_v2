@@ -7,7 +7,7 @@ if [ $# -lt 5 ];
 then
 	echo "USAGE: ./bam2wig.sh <input bam file> <output dir> <bin size (10)> <min mapping quality (20)> <tool config.txt> <exon key>";
 else					
-	#set -x
+	set -x
 	echo "Starting bam2wig"
 	echo $(date)
 	input_bam=$1
@@ -72,14 +72,13 @@ else
 		# sorting in same chr order as bam (required for coverage calculation)
 		for chr in $(echo $chrs | sed 's/:/ /g')
 		do
-			grep -w "^${chr}" $exon_bed | sort -k2n | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4}' | $bedtools/mergeBed $name_col >> $output_dir/$filename.exons.bed
+			grep -w "^${chr}" $exon_bed | sort -k2n -T $output_dir | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4}' | $bedtools/mergeBed -d -1 $name_col >> $output_dir/$filename.exons.bed
 		done
 		if [ -f $output_dir/$filename.exon.tmp.bed ]
 		then
 			rm $output_dir/$filename.exon.tmp.bed
 		fi
 		$script_path/bin_exons.pl $output_dir/$filename.exons.bed $output_dir/$filename.exons_binned.bed $bin_size
-		rm $output_dir/$filename.exons.bed
 	else
 		# whole genome
 		echo "todo: create bins over whole genome instead of exons"
@@ -91,11 +90,14 @@ else
 	rm $output_dir/$filename.exons_binned.bed
 
 	# sort bed to match exon key order (very important)
-	cat $output_dir/$filename.coverage.txt | sort -k1,1 -k2,2g > $output_dir/$filename.coverage.sort.txt
+	cat $output_dir/$filename.coverage.txt | sort -k1,1 -k2,2g -T $output_dir > $output_dir/$filename.coverage.sort.txt
+	cat $output_dir/$filename.exons.bed | sort -k1,1 -k2,2g -T $output_dir > $output_dir/$filename.exons.sort.bed
+	rm $output_dir/$filename.exons.bed
 
 	# convert bed to wig
 	coverage_col=$(head -1 $output_dir/$filename.coverage.sort.txt | awk '{print NF}')
-	$script_path/bed2wig.pl $output_dir/$filename.coverage.sort.txt $output_dir/$filename.coverage.wig $bin_size $coverage_col
+	$script_path/bed2wig.pl $output_dir/$filename.coverage.sort.txt $output_dir/$filename.exons.sort.bed $output_dir/$filename.coverage.wig $bin_size $coverage_col
+	rm $output_dir/$filename.exons.sort.bed
 	rm $output_dir/$filename.coverage.txt
 	rm $output_dir/$filename.coverage.sort.txt
 	

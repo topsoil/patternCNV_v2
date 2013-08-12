@@ -30,9 +30,9 @@ if(scalar(@ARGV) != 3){
 		$gene = "\t".$line[3] if defined $line[3];
 		my $length = $stop-$start;
 		# always print at least one bin for an exon
-		print OUT $chr."\t".$start."\t".($start+$bin).$gene."\n";
-		$start+=$bin;
-		$length-=$bin;
+		#print OUT $chr."\t".$start."\t".($start+$bin).$gene."\n";
+		#$start+=$bin;
+		#$length-=$bin;
 		while($length >= $bin){
 			print OUT $chr."\t".$start."\t".($start+$bin).$gene."\n";
 			$start+=$bin;

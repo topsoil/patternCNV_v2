@@ -43,7 +43,7 @@ else
 	
 	echo "Sorting exon bed file..."
 	# sort, merge exons
-	cat $exon_bed | sort -k1,1 -k2,2g | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4}' | $bedtools/mergeBed $name_col > $output_file.all_exons_merged.tmp.bed
+	cat $exon_bed | sort -k1,1 -k2,2g | awk -F"\t" -v bin=$bin_size '{if(($3-$2) < bin){print $1"\t"$2"\t"($2+bin)"\t"$4}else{print $1"\t"$2"\t"$3"\t"$4}}' | $bedtools/mergeBed -d -1 $name_col > $output_file.all_exons_merged.tmp.bed
 
 	if [ $column_count -lt 4 ]
 	then

@@ -7,44 +7,53 @@ use strict;
 use warnings;
 
 
-if(scalar(@ARGV) != 4){
-	print "USAGE: bed2wig.pl <input binned bed file> <output wig file> <bin size> <coverage column>\n";
-}else{
-	my $input = $ARGV[0];
-	my $output = $ARGV[1];
-	my $bin = $ARGV[2];
-	my $coverage_col = $ARGV[3]-1;
+if(scalar(@ARGV) != 5){
+	die("USAGE: bed2wig.pl <input binned bed file> <exon bed file> <output wig file> <bin size> <coverage column>\n");
+}
+
+my $input = $ARGV[0];
+my $exon_bed = $ARGV[1];
+my $output = $ARGV[2];
+my $bin = $ARGV[3];
+my $coverage_col = $ARGV[4]-1;
 	
-	open IN, "<$input" or die "opening $input\n";
-	open OUT, ">$output" or die "opening $output\n";
-	
-	my $prev_start = 0;
-	my $prev_chr = "";
-	while(<IN>){
-		my $row = $_;
-		chomp $row;
-		my @line = split("\t",$row);
+open IN, "<$input" or die "opening $input\n";
+open EXON_BED, "<$exon_bed" or die "opening $exon_bed\n";
+open OUT, ">$output" or die "opening $output\n";
+
+# prime pump
+my $in_row = <IN>;
+my $exon_row = <EXON_BED>;
+
+while(defined $in_row || defined $exon_row){
+	chomp $in_row if defined $in_row;
+	chomp $exon_row if defined $exon_row;
+	if(!defined $in_row){
+		# no need to go further if reached end of BED
+		last;
+	}else{
+		my @line = split("\t",$in_row);
 		my $chr = $line[0];
 		my $start = $line[1];
 		my $stop = $line[2];
 		my $coverage = $line[$coverage_col];
-		$prev_chr = $chr if $prev_chr eq "";
-		$prev_start = 0 if $prev_chr ne $chr; # handle chr transitions
-		# print wig header for each exon
-		if($start-$prev_start > $bin){
-			print OUT "fixedStep chrom=".$chr." start=".($start+1)." step=".$bin."\n";
+		if(defined $exon_row){
+			# check to see if an exon header needs to be written
+			my @exon_line = split("\t",$exon_row);
+			if($chr eq $exon_line[0] and $start == $exon_line[1]){
+				print OUT "fixedStep chrom=".$chr." start=".($start+1)." step=".$bin."\n";
+				$exon_row = <EXON_BED>;
+			}
 		}
-		$prev_start = $start;
-		$prev_chr = $chr;
 		print OUT $coverage."\n";
-		
-		
+		$in_row = <IN>;
 	}
-	
-	close IN;
-	close OUT;
-
-	
 }
+
+close IN;
+close EXON_BED;
+close OUT;
+
+
 
 

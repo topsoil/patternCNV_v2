@@ -31,13 +31,13 @@ else
 	config=$output_dir/sge_config.txt
 
 	# create exon key
-	EXONKEY=$(qsub -V -wd $output_dir/logs -q $queue -m a $memory $script_path/bam2wig/exon_key.sh $exon_bed $capture_bed $output_dir/PatternCNV.Exon.Key.txt $bin_size $config)
+	EXONKEY=$(qsub -V -wd $output_dir/logs -q $queue -m a -M $email $memory $script_path/bam2wig/exon_key.sh $exon_bed $capture_bed $output_dir/PatternCNV.Exon.Key.txt $bin_size $config)
 	jobid_exonkey=$(echo $EXONKEY | cut -d ' ' -f3)
 
 	# bam2wig
 	for bam in $(cat $bams_config)
 	do
-		qsub -V -wd $output_dir/logs -q $queue -m a $memory -hold_jid $jobid_exonkey $script_path/bam2wig/bam2wig.sh $bam $output_dir $bin_size $min_mapping_qual $config $output_dir/PatternCNV.Exon.Key.txt
+		qsub -V -wd $output_dir/logs -q $queue -m a -M $email $memory -hold_jid $jobid_exonkey $script_path/bam2wig/bam2wig.sh $bam $output_dir $bin_size $min_mapping_qual $config $output_dir/PatternCNV.Exon.Key.txt
 	done
 	echo $(date)
 fi
