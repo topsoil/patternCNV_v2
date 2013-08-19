@@ -49,6 +49,10 @@ patCNV.load.Rlib <- function( lib_name, lib_type=c('CRAN','Bioconductor') )
 
 }
 
+patCNV.file.exists <- function(file_name)
+{
+  return(url.exists(file_name)|file.exists(file_name))
+}
 
 patCNV.data <- function(data_name, DIR_name=patCNV.install.DIR)
 {

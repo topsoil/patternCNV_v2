@@ -7,9 +7,9 @@ patCNV.estimate.FDR <- function( cnv_res, session_info, null_model, is.plot=FALS
   N_exon <- nrow(cnv.mtx)
   
   res <- cnv_res
-  res$LFDR.mtx <- mat.or.vec(N_exon,N_sample) + 1
-  res$qval.mtx <- mat.or.vec(N_exon,N_sample) + 1
-  res$rawp.mtx <- mat.or.vec(N_exon,N_sample) + 1
+  res$LFDR.mtx <- data.matrix(mat.or.vec(N_exon,N_sample)) + 1
+  res$qval.mtx <- data.matrix(mat.or.vec(N_exon,N_sample)) + 1
+  res$rawp.mtx <- data.matrix(mat.or.vec(N_exon,N_sample)) + 1
   
   colnames(res$LFDR.mtx)=colnames(res$qval.mtx)=colnames(res$rawp.mtx)=cnv_res$sample.ID
   

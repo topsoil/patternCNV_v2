@@ -3,6 +3,7 @@ patCNV.load.config <- function( config_file )
 
  #=== checking and loading require libraries  
  patCNV.load.Rlib(lib_name='DNAcopy',lib_type='bioconductor')
+ patCNV.load.Rlib(lib_name='RCurl',lib_type='CRAN')
  patCNV.load.Rlib(lib_name='fdrtool',lib_type='CRAN')
 # patCNV.load.Rlib(lib_name='VGAM',lib_type='CRAN')
  patCNV.load.Rlib(lib_name='matrixStats',lib_type='CRAN')
@@ -18,7 +19,7 @@ patCNV.load.config <- function( config_file )
   
  
  #=== detecting existence of important files
- if(!file.exists(exon_key_file))
+ if(!patCNV.file.exists(exon_key_file))
  {
    str1 <- '\n Error! Exon key file cannot be located. \n Please check \"exon_key_file\" in \"'
    str2 <- '\" and re-run the code. \n'
@@ -26,7 +27,7 @@ patCNV.load.config <- function( config_file )
    return()
  }
   
- if(!file.exists(sample_info_file))
+ if(!patCNV.file.exists(sample_info_file))
  {
    str1 <- '\n Error! sample information file cannot be located. \n Please check \"sample_info_file\" in \"'
    str2 <- '\" and re-run the code. \n'
@@ -55,7 +56,7 @@ patCNV.load.config <- function( config_file )
  for(k in 1:nrow(file_info))
  {
    tmp_file <- file_info$file.name[k]
-   if(!file.exists(tmp_file))
+   if(!patCNV.file.exists(tmp_file))
    {
      cat('\n Error! Input file \"',tmp_file,'\" cannot be located',sep='')
    }

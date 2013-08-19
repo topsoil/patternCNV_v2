@@ -1,5 +1,5 @@
-patCNV.coverage.QC <- function( covg_info, session_info,sel_genes,legend.layout="topleft")
-  
+patCNV.coverage.QC <- function( covg_info, session_info,sel_genes,legend.layout="topleft",legend.cex=0.5)
+# if legend.layout=='none', not plotting legend
   
 {
   
@@ -30,8 +30,12 @@ patCNV.coverage.QC <- function( covg_info, session_info,sel_genes,legend.layout=
 	  lines(sel.rpkm.mtx[,j],type='b',col=samplecolor_vec[j],pch=j,lwd=1.5,cex=0.8)  
 	}
 	grid()
-	legend(x=legend.layout,colnames(covg_info$exon_RPKM_mtx),
-	       cex=0.75,col=samplecolor_vec,pch=seq(1,N_sample),lty=1,lwd=1)
+  if(legend.layout!='none') 
+  {
+    legend(x=legend.layout,colnames(covg_info$exon_RPKM_mtx),
+           cex=legend.cex,col=samplecolor_vec,pch=seq(1,N_sample),lty=1,lwd=1)  
+  }
+	
 	
 	par(oma = c(0, 0, 0, 0)) # restore
 } # end of QC function
