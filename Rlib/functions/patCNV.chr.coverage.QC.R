@@ -1,4 +1,4 @@
-patCNV.chr.coverage.QC <- function( covg_info, session_info,legend.layout="topright",plot.cex=2,legend.cex=1)
+patCNV.chr.coverage.QC <- function(  session_info,covg_info,legend.layout="topright",plot.cex=2,legend.cex=1)
   
   
 {
@@ -24,8 +24,13 @@ patCNV.chr.coverage.QC <- function( covg_info, session_info,legend.layout="topri
 	  lines(chr.rpkm.mtx[,j],type='b',col=samplecolor_vec[j],pch=j,lwd=1.5,cex=plot.cex)  
 	}
 	grid()
-	legend(x=legend.layout,colnames(covg_info$exon_RPKM_mtx),
-	       cex=legend.cex,col=samplecolor_vec,pch=seq(1,N_sample),lty=1,lwd=1)
+
+	  if(legend.layout!='none') 
+	  {
+		legend(x=legend.layout,colnames(covg_info$exon_RPKM_mtx),
+	       	cex=legend.cex,col=samplecolor_vec,pch=seq(1,N_sample),lty=1,lwd=1)
+	  }
+ 
 
 } # end of QC function
   

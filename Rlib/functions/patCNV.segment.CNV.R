@@ -1,4 +1,4 @@
-patCNV.segment.CNV <- function( cnv_res, session_info, 
+patCNV.segment.CNV <- function( session_info, cnv_res,  
 				capture.only=TRUE,ref_avg_type='median',min_ref_avg_RPKM=3,
                                 is.plot=TRUE, 
 				plot.ylim=c(-3,3),plot.cex=0.6,output_suffix='CNV_seg',...)
@@ -9,12 +9,18 @@ patCNV.segment.CNV <- function( cnv_res, session_info,
   require(DNAcopy)
   patCNV.create.DIR(session_info$DIR$txt_output_DIR)
   
+  if(!file.exists(session_info$Misc$median_RPKM_file) & !(file.exists(session_info$Misc$mean_RPKM_file))) {
+    # no coverage files, ignoring this information
+    N_exon <- nrow(session_info$exon_info)
+    ref_avg_RPKM <- mat.or.vec(N_exon,1) + 1e10
+    
+  } else {
   if(ref_avg_type=='median')	
      {ref_avg_RPKM <- unlist(read.delim(session_info$Misc$median_RPKM_file,header=FALSE))}
 
   if(ref_avg_type=='mean')	
      {ref_avg_RPKM <- unlist(read.delim(session_info$Misc$mean_RPKM_file,header=FALSE))} 
-	
+  }
   
   sample_ID_vec <- cnv_res$sample.ID
   N_sample <- length(sample_ID_vec)
@@ -60,10 +66,12 @@ patCNV.segment.CNV <- function( cnv_res, session_info,
     
     if (is.plot)
     {
+      patCNV.create.DIR(session_info$DIR$plot_output_DIR)
       CNV_seg_pdf_filename <- 
         paste(session_info$DIR$plot_output_DIR,sel_sample_ID,output_suffix,'.pdf',sep='')
       pdf(CNV_seg_pdf_filename)
-      plot(seg.res_My,ylim=plot.ylim,cex=plot.cex)
+        plot(seg.res_My,ylim=plot.ylim,cex=plot.cex,plot.type="chrombysample",xmaploc=FALSE)
+        #xmaploc=TRUE x-axis should be according to chr position rather than bin number
       dev.off()  
     } # if (is.plot)
     

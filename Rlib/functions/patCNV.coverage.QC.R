@@ -1,4 +1,4 @@
-patCNV.coverage.QC <- function( covg_info, session_info,sel_genes,legend.layout="topleft",legend.cex=0.5)
+patCNV.coverage.QC <- function(  session_info,covg_info,sel_genes,legend.layout="topleft",legend.cex=0.5)
 # if legend.layout=='none', not plotting legend
   
 {

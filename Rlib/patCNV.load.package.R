@@ -38,5 +38,5 @@ for (i in 1:length(function_vec))
 }
 
 cat('\n ========================================================= \n')
-cat('\n R functions of pattern-CNV (ver 0.98) have been successfully loaded! \n')
+cat('\n R functions of pattern-CNV (ver 1.0) have been successfully loaded! \n')
 cat('\n ========================================================= \n')

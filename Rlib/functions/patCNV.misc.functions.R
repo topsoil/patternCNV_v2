@@ -54,12 +54,17 @@ patCNV.file.exists <- function(file_name)
   return(url.exists(file_name)|file.exists(file_name))
 }
 
-patCNV.data <- function(data_name, DIR_name=patCNV.install.DIR)
+patCNV.data <- function(data_name, DIR_name=patCNV.install.DIR, is.verbose=TRUE)
 {
 	tmp.file <- paste(DIR_name,'/data/',data_name,sep='')
- 	cat(tmp.file,'... loaded \n')
+  if(is.verbose)  {
+    cat(tmp.file,'... loaded \n')    
+  }
+ 	
 	load(tmp.file,parent.frame(n = 1))
-        cat('\n')	
+	if(is.verbose)  {
+	  cat('\n')      
+	}
 }
 
 

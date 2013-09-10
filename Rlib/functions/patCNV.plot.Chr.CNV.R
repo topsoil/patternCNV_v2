@@ -1,20 +1,28 @@
-patCNV.plot.Chr.CNV <- function( cnv_res, session_info, sample_name, 
+patCNV.plot.Chr.CNV <- function( session_info, cnv_res, sample_name, 
 				sel_chr='chr1', chr_range=NULL,
 				capture.only=TRUE, min_ref_avg_RPKM=3,ref_avg_type='median',
 				cex=0.65,col='steelblue3',ylim=c(-3,3),
-				xlab='Mb',ylab='log2-ratio',...)
+				xlab='Mb',ylab='log2-ratio',
+        ideogram=FALSE,ideogram.cex=0.75,...)
 #===== ... is for plot()
 {
 	
 	sel.sample.idx <- which(cnv_res$sample.name==sample_name)
 	if(!length(sel.sample.idx))
 	 { stop(paste(sample_name,'cannot be located in input','\n')) }	
-
-   if(ref_avg_type=='median')	
-     {ref_avg_RPKM <- unlist(read.delim(session_info$Misc$median_RPKM_file,header=FALSE))}
-
-   if(ref_avg_type=='mean')	
-     {ref_avg_RPKM <- unlist(read.delim(session_info$Misc$mean_RPKM_file,header=FALSE))} 
+    
+    	if(!file.exists(session_info$Misc$median_RPKM_file) & !(file.exists(session_info$Misc$mean_RPKM_file))) {
+    	  # no coverage files, ignoring this information
+    	  N_exon <- nrow(session_info$exon_info)
+    	  ref_avg_RPKM <- mat.or.vec(N_exon,1) + 1e10
+    	  
+    	} else {
+    	  if(ref_avg_type=='median')  
+    	  {ref_avg_RPKM <- unlist(read.delim(session_info$Misc$median_RPKM_file,header=FALSE))}
+    	  
+    	  if(ref_avg_type=='mean')	
+    	  {ref_avg_RPKM <- unlist(read.delim(session_info$Misc$mean_RPKM_file,header=FALSE))} 
+    	}
     
    
       if(capture.only)
@@ -37,5 +45,18 @@ patCNV.plot.Chr.CNV <- function( cnv_res, session_info, sample_name,
       plot(gnm_pos, cnv_res$CNV[order_chr_idx,sel.sample.idx], type='p',
 		main=paste(sel_chr,' log2-ratio CNV @ ',cnv_res$sample.ID[sel.sample.idx]), 
 		cex=cex,col=col,xlab=xlab,ylab=ylab,ylim=ylim,...)  
+	  axis(side=4)  
+  
+   if(ideogram==TRUE)
+   {
+     par(cex=ideogram.cex)
+     require(SNPchip)
+     chr_j <- as.numeric(unlist(strsplit(tolower(sel_chr),'chr'))[2])
+     plotIdiogram(chr_j,build='hg19',ylim=ylim,cytoband.ycoords=c(ylim[1]+0.1, ylim[1]+0.3),
+                  new=FALSE,label.y=ylim[1]+0.6,unit='Mb',cex.axis=0.45)
+     par(cex=1)   
+   }
+     
+  
   
 }

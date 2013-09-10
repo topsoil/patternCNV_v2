@@ -38,6 +38,12 @@ patCNV.load.config <- function( config_file )
  #=== load exon_key
  cat('\n Loading exon information from \"', exon_key_file, '\"',sep='')
  exon_info <- read.delim(exon_key_file,stringsAsFactors=FALSE)
+ 
+ if(substr(exon_info$Chr[1],1,1)!='c'){
+   exon_info$Chr <- paste('chr',exon_info$Chr,sep='')   # if not starting with 'chr'
+ }
+   
+ 
  exon_info$exon_bin_vec <- as.numeric(exon_info$Bin_Count)
  exon_info$is_capture_vec <- as.numeric(exon_info$InCapture)
  cat('\n Number of exons in capture:',length(which(exon_info$is_capture_vec==1)))

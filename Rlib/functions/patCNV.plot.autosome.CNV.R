@@ -1,12 +1,15 @@
-patCNV.plot.autosome.CNV <- function( cnv_res, session_info, sample_name, chr_length_info,
+patCNV.plot.autosome.CNV <- function( session_info, cnv_res, sample_name, chr_ver='hg19',
                                 capture.only=TRUE, min_ref_avg_RPKM=3,ref_avg_type='median',
-                                ylim=c(-3,3),cex=0.6,output_suffix='_whole_exome_CNV',
-				xlab='Mb',ylab='log2-ratio',
-                          color_vec=c('red','blue','green','orange','brown','purple','black'),
-				... )
+                                ylim=c(-3,3),cex=0.6,	xlab='Mb',ylab='log2-ratio',
+                                color_vec=c('red','blue','green','orange','brown','purple','black'),
+				                        ... )
 {
+   if(chr_ver=='hg19')
+   {
+     patCNV.data(data_name='hg19.Chr_length',is.verbose=FALSE)
+     chr_length_vec <- hg19.Chr_length_vec  
+   }
    
-   chr_length_vec <- chr_length_info
     
    sel_sample_idx <- which(cnv_res$sample.name==sample_name)
    
@@ -44,7 +47,7 @@ patCNV.plot.autosome.CNV <- function( cnv_res, session_info, sample_name, chr_le
                                 ref_avg_RPKM>=min_ref_avg_RPKM & 
 				session_info$exon_info$InCapture==1)  
         } else {
-          sel_chr_idx <- which(session_info$exon_info$Chr==sel_chr & 								ref_avg_RPKM>=min_ref_avg_RPKM)
+          sel_chr_idx <- which(session_info$exon_info$Chr==sel_chr & 	ref_avg_RPKM>=min_ref_avg_RPKM)
         } # exon indices in selected Chr
         
       order_chr_idx <- sel_chr_idx[order(session_info$exon_info$Start[sel_chr_idx])]

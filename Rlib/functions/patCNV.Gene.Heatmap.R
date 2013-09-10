@@ -1,4 +1,4 @@
-patCNV.Gene.Heatmap <- function( cnv_res, session_info, sel_genes,
+patCNV.Gene.Heatmap <- function( session_info, cnv_res, sel_genes,
 			         ref_avg_type='median',min_ref_avg_RPKM=3, capture.only=TRUE,
                                  logr.cut=1.5, font.cex=0.7, heatmap.margin=10,...)
 #===== ... is for plot()
