@@ -41,7 +41,7 @@ while(defined $in_row || defined $exon_row){
 			# check to see if an exon header needs to be written
 			my @exon_line = split("\t",$exon_row);
 			if($chr eq $exon_line[0] and $start == $exon_line[1]){
-				print OUT "fixedStep chrom=".$chr." start=".($start+1)." step=".$bin."\n";
+				print OUT "fixedStep chrom=".$chr." start=".($start+1)." step=".$bin." span=".$bin."\n";
 				$exon_row = <EXON_BED>;
 			}
 		}
