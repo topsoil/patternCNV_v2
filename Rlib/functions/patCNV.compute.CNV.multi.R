@@ -38,7 +38,7 @@ patCNV.compute.CNV.multi <- function( session_info, sample.type=NULL,
   
   
   
-  CNV.mtx <- mat.or.vec(N_exon,N_sample)
+  CNV.mtx <- as.matrix(mat.or.vec(N_exon,N_sample))
   colnames(CNV.mtx) <- sample_ID_vec
   
   pb <- txtProgressBar(style=3,max=N_sample)

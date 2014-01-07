@@ -26,9 +26,9 @@ patCNV.scan.covg.multi <- function(session_info, sample.type=NULL, bin_size=10, 
   
   total_count_vec <- mat.or.vec(N_samples,1)
   names(total_count_vec) <- sample_ID_vec
-  exon_count_mtx <- mat.or.vec(N_exons,N_samples)
+  exon_count_mtx <- as.matrix(mat.or.vec(N_exons,N_samples))
   colnames(exon_count_mtx) <- sample_ID_vec
-  exon_RPKM_mtx <- mat.or.vec(N_exons,N_samples)
+  exon_RPKM_mtx <- as.matrix(mat.or.vec(N_exons,N_samples))
   colnames(exon_RPKM_mtx) <- sample_ID_vec
 
   
