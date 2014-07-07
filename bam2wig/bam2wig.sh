@@ -1,21 +1,60 @@
 #!/bin/sh
 # create a coverage wig file from a sorted, duplicate marked bam file
 # Jared Evans evans.jared@mayo.edu
-# 2/21/12
+# 7/7/14
 
-if [ $# -lt 5 ];
+usage()
+{
+echo "
+NAME:
+bam2wig.sh 
+
+DESCRIPTION:
+This script creates a coverage WIG file from a sorted BAM file
+
+USAGE:
+./bam2wig.sh -i input.bam -o /output/directory/path/ -b 10 -t config.txt -e Exon.Key.txt
+
+OPTIONS:
+-i	input.bam	BAM file (required)
+-o	/out/dir/	Output directory (required)
+-b	10		Bin size (required)
+-m	20		Min mapping quality
+-t	config.txt	Tool config file (required)
+-e	Exon.Key.txt	Exon key file
+-n			Not to merge overlapping BED regions
+-h			print out this help message
+"
+exit 1;
+}
+
+while getopts "i:o:b:m:t:e:nh" opt; do
+	case $opt in
+		i) input_bam=$OPTARG;;
+		o) output_dir=$OPTARG;;
+		b) bin_size=$OPTARG;;
+		m) min_mapq=$OPTARG;;
+		t) tool_config=$OPTARG;;
+		e) exon_bed=$OPTARG;;
+		n) no_merge="YES";;
+		h) usage;;
+		\?) echo "See available options:" >&2
+		usage;;
+		:) echo "See available options:" >&2
+		usage;;
+	esac
+done
+
+if [ -z "$input_bam" -o -z "$output_dir" -o -z "$bin_size" -o -z "$min_mapq" -o -z "$tool_config" ]
 then
-	echo "USAGE: ./bam2wig.sh <input bam file> <output dir> <bin size (10)> <min mapping quality (20)> <tool config.txt> <exon key>";
-else					
+	echo "Missing Required Parameters!"
+	usage
+fi
+
+
 	set -x
 	echo "Starting bam2wig"
 	echo $(date)
-	input_bam=$1
-	output_dir=$2
-	bin_size=$3
-	min_mapq=$4
-	tool_config=$5
-	exon_bed=$6
 	
 	filename=$(basename $input_bam)
 
@@ -115,5 +154,5 @@ else
 
 	echo "Finished creating wig file"
 	echo $(date)
-fi	
+
 

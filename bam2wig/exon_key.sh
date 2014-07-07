@@ -1,20 +1,58 @@
 #!/bin/sh
 # create exon key used in PatternCNV
 # Jared Evans
-# 5/7/13
+# 7/7/14
 
-if [ $# != 5 ];
+usage()
+{
+echo "
+NAME:
+exon_key.sh 
+
+DESCRIPTION:
+This script creates a coverage WIG file from a sorted BAM file
+
+USAGE:
+./bam2wig.sh -i input.bam -o /output/directory/path/ -b 10 -t config.txt -e Exon.Key.txt
+
+OPTIONS:
+-e	exon.bed	Exon BED file (required)
+-c	capturekit.bed	Capture Kit BED file (required)
+-o	out.txt		Output file (required)
+-b	10		Bin size (required)
+-t	config.txt	Tool config file (required)
+-n			Not to merge overlapping BED regions
+-h			print out this help message
+"
+exit 1;
+}
+
+while getopts "e:c:o:b:t:nh" opt; do
+		case $opt in
+		e) exon_bed=$OPTARG;;
+		c) capture_bed=$OPTARG;;
+		o) output_file=$OPTARG;;
+		b) bin_size=$OPTARG;;
+		t) tool_config=$OPTARG;;
+		n) no_merge="YES";;
+		h) usage;;
+		\?) echo "See available options:" >&2
+		usage;;
+		:) echo "See available options:" >&2
+		usage;;
+	esac
+done
+
+if [ -z "$exon_bed" -o -z "$capture_bed" -o -z "$output_file" -o -z "$bin_size" -o -z "$tool_config" ]
 then
-	echo "usage: ./exon_key.sh <exon bed file> <capture kit bed file> <output file> <bin size (10)> <tool config.txt>";
-else					
-	#set -x
+	echo "Missing Required Parameters!"
+	usage
+fi
+
+
+	set -x
 	echo "Starting creation of exon key"
 	echo $(date)
-	exon_bed=$1
-	capture_bed=$2
-	output_file=$3
-	bin_size=$4
-	tool_config=$5
 	
 	# get paths to local installs of tools
 	script_path=$(grep "^PATTERNCNV=" $tool_config | cut -d"=" -f2)
@@ -61,5 +99,5 @@ else
 	
 	echo "Finished creating exon key"
 	echo $(date)
-fi	
+
 
