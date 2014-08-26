@@ -4,3 +4,5 @@ PATTERNCNV=/projects/bsi/bioinf_int/s112423.PatternCNV/trunk
 SAMTOOLS=/projects/bsi/bictools/apps/alignment/samtools/samtools-0.1.18/samtools
 BEDTOOLS=/projects/bsi/bictools/apps/misc/BEDTools/2.15.0/bin
 
+GENOME_SIZE=/projects/bsi/bioinf_int/s112423.PatternCNV/trunk/data/human_37.1.genome
+

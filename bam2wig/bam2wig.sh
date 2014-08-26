@@ -18,8 +18,8 @@ USAGE:
 OPTIONS:
 -i	input.bam	BAM file (required)
 -o	/out/dir/	Output directory (required)
--b	10		Bin size (required)
--m	20		Min mapping quality
+-b	10		Bin size. Set to 0 to turn off binning. Default 10
+-m	20		Min mapping quality. Default 20
 -t	config.txt	Tool config file (required)
 -e	Exon.Key.txt	Exon key file
 -n			Not to merge overlapping BED regions
@@ -45,7 +45,7 @@ while getopts "i:o:b:m:t:e:nh" opt; do
 	esac
 done
 
-if [ -z "$input_bam" -o -z "$output_dir" -o -z "$bin_size" -o -z "$min_mapq" -o -z "$tool_config" ]
+if [ -z "$input_bam" -o -z "$output_dir" -o -z "$tool_config" ]
 then
 	echo "Missing Required Parameters!"
 	usage
@@ -56,6 +56,16 @@ fi
 	echo "Starting bam2wig"
 	echo $(date)
 	
+	# set defaults
+	if [ -z "$bin_size" ]
+	then
+		bin_size=10
+	fi
+	if [ -z "$min_mapq" ]
+	then
+		min_mapq=20
+	fi
+
 	filename=$(basename $input_bam)
 
 	# get paths to local installs of tools
@@ -111,13 +121,25 @@ fi
 		# sorting in same chr order as bam (required for coverage calculation)
 		for chr in $(echo $chrs | sed 's/:/ /g')
 		do
-			grep -w "^${chr}" $exon_bed | sort -k2n -T $output_dir | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4}' | $bedtools/mergeBed -d -1 $name_col >> $output_dir/$filename.exons.bed
+			if [ $no_merge ] # option to not merge overlapping BED regions
+			then
+				grep -w "^${chr}" $exon_bed | sort -k2n -T $output_dir | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4}' >> $output_dir/$filename.exons.bed
+			else
+				grep -w "^${chr}" $exon_bed | sort -k2n -T $output_dir | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4}' | $bedtools/mergeBed -d -1 $name_col >> $output_dir/$filename.exons.bed
+			fi
 		done
 		if [ -f $output_dir/$filename.exon.tmp.bed ]
 		then
 			rm $output_dir/$filename.exon.tmp.bed
 		fi
-		$script_path/bin_exons.pl $output_dir/$filename.exons.bed $output_dir/$filename.exons_binned.bed $bin_size
+		if [ $bin_size == 0 ] # if bin size is 0 don't bin
+		then
+			cp $output_dir/$filename.exons.bed $output_dir/$filename.exons_binned.bed
+		else
+			#$script_path/bin_exons.pl $output_dir/$filename.exons.bed $output_dir/$filename.exons_binned.bed $bin_size
+			# bin BED regions. If there are leftover lengths shorter than the bin_size then they are ignored
+			cat $output_dir/$filename.exons.bed | perl -slane '$gene=""; $gene="\t".$F[3] if defined $F[3]; $length=($F[2]-$F[1]); while($length >= $bin_size){print $F[0]."\t".$F[1]."\t".($F[1]+$bin_size).$gene; $F[1]+=$bin_size; $length-=$bin_size;};' -- -bin_size=$bin_size > $output_dir/$filename.exons_binned.bed
+		fi
 	else
 		# whole genome
 		echo "todo: create bins over whole genome instead of exons"
@@ -125,7 +147,7 @@ fi
 
 	# calculate coverage, filter duplicates and low qual reads
 	echo "Calculating coverage from pileup..."
-	$samtools mpileup -Q 0 -q $min_mapq $input_bam | $script_path/pileup_coverage.pl $output_dir/$filename.exons_binned.bed $output_dir/$filename.coverage.txt $chrs
+	$samtools mpileup -d 10000000 -Q 0 -q $min_mapq $input_bam | $script_path/pileup_coverage.pl $output_dir/$filename.exons_binned.bed $output_dir/$filename.coverage.txt $chrs
 	rm $output_dir/$filename.exons_binned.bed
 
 	# sort bed to match exon key order (very important)
@@ -141,7 +163,10 @@ fi
 	rm $output_dir/$filename.coverage.sort.txt
 	
 	# quick QC check on wig file
-	$script_path/count_wig_chrs.pl $output_dir/$filename.coverage.wig | awk -F"\t" '($2 == 0){print "WARNING! There is 0 coverage in the wig file for this chromosome: "$0}'
+	#$script_path/count_wig_chrs.pl $output_dir/$filename.coverage.wig | awk -F"\t" '($2 == 0){print "WARNING! There is 0 coverage in the wig file for this chromosome: "$0}'
+	# Give a warning if any chromosome has 0 coverage
+	cat $output_dir/$filename.coverage.wig | perl -F/\\s/ -slane 'BEGIN{$current_chr=""; $current_chr_count=0;}; if($F[0] eq "fixedStep"){@chr=split("=",$F[1]); if($chr[1] ne $current_chr){print "WARNING! There is 0 coverage in the wig file for chromosome: ".$current_chr if $current_chr ne "" and $current_chr_count == 0; $current_chr=$chr[1]; $current_chr_count=0;}}else{$current_chr_count+=$F[0];};END{print "WARNING! There is 0 coverage in the wig file for chromosome: ".$current_chr if $current_chr ne "" and $current_chr_count == 0;}'
+
 	if [ $exon_key -gt 0 ]
 	then
 		wig_lines=$(cat $output_dir/$filename.coverage.wig | wc -l)
@@ -151,6 +176,7 @@ fi
 			echo "ERROR! wig line count (${wig_lines}) doesn't match expected count from exon key (${exon_key_lines})"
 		fi
 	fi
+	gzip -f $output_dir/$filename.coverage.wig
 
 	echo "Finished creating wig file"
 	echo $(date)

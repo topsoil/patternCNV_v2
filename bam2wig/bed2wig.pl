@@ -36,6 +36,7 @@ while(defined $in_row || defined $exon_row){
 		my $chr = $line[0];
 		my $start = $line[1];
 		my $stop = $line[2];
+		$bin = $stop-$start if $bin == 0;
 		my $coverage = $line[$coverage_col];
 		if(defined $exon_row){
 			# check to see if an exon header needs to be written
