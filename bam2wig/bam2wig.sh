@@ -173,7 +173,7 @@ fi
 		exon_key_lines=$(awk -F"\t" '{sum+=($4+1)}END{print sum-1}' $exon_key_file)
 		if [ $wig_lines != $exon_key_lines ]
 		then
-			echo "ERROR! wig line count (${wig_lines}) doesn't match expected count from exon key (${exon_key_lines})"
+			echo "ERROR! wig line count (${wig_lines}) doesn't match expected count from exon key (${exon_key_lines}) in ${filename}.coverage.wig"
 		fi
 	fi
 	gzip -f $output_dir/$filename.coverage.wig

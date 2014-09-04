@@ -101,7 +101,7 @@ fi
 	# union exon+capture beds, extend, sort, merge
 	if [ $no_merge ] # option to not merge overlapping BED regions
 	then
-		cat $exon_bed $capture_bed | awk -F"\t" '{if($4 != ""){print $1"\t"$2"\t"$3"\t"$4}else{print $1"\t"$2"\t"$3"\ttmp_name"}}' | $bedtools/slopBed -b $extend_size -g $genome_size | sort -k1,1 -k2,2g | awk -F"\t" -v bin=$bin_size '{if(($3-$2) < bin){print $1"\t"$2"\t"($2+bin)"\t"$4}else{print $1"\t"$2"\t"$3"\t"$4}}' > $output_file.all_exons_merged.tmp.bed
+		cat $exon_bed | awk -F"\t" '{if($4 != ""){print $1"\t"$2"\t"$3"\t"$4}else{print $1"\t"$2"\t"$3"\ttmp_name"}}' | $bedtools/slopBed -b $extend_size -g $genome_size | sort -k1,1 -k2,2g | awk -F"\t" -v bin=$bin_size '{if(($3-$2) < bin){print $1"\t"$2"\t"($2+bin)"\t"$4}else{print $1"\t"$2"\t"$3"\t"$4}}' > $output_file.all_exons_merged.tmp.bed
 	else
 		cat $exon_bed $capture_bed | awk -F"\t" '{if($4 != ""){print $1"\t"$2"\t"$3"\t"$4}else{print $1"\t"$2"\t"$3"\ttmp_name"}}' | $bedtools/slopBed -b $extend_size -g $genome_size | sort -k1,1 -k2,2g | awk -F"\t" -v bin=$bin_size '{if(($3-$2) < bin){print $1"\t"$2"\t"($2+bin)"\t"$4}else{print $1"\t"$2"\t"$3"\t"$4}}' | $bedtools/mergeBed -d -1 -nms > $output_file.all_exons_merged.tmp.bed
 	fi
