@@ -1,0 +1,7 @@
+.libPaths("/projects/bsi/bioinf_int/s112423.PatternCNV/trunk/Rlib")
+source("http://bioconductor.org/biocLite.R")
+biocLite("DNAcopy")
+install.packages(pkgs="fdrtool",repos='http://cran.us.r-project.org')
+install.packages(pkgs="gplots",repos='http://cran.us.r-project.org')
+install.packages(pkgs="matrixStats",repos='http://cran.us.r-project.org')
+install.packages(pkgs="RCurl",repos='http://cran.us.r-project.org')

@@ -22,7 +22,8 @@ else
 	script_path=$( cat $config | grep -w '^PATTERNCNV' | cut -d '=' -f2)
 	samtools_path=$( cat $config | grep -w '^SAMTOOLS' | cut -d '=' -f2)
 	bedtools_path=$( cat $config | grep -w '^BEDTOOLS' | cut -d '=' -f2)
-	memory=$( cat $config | grep -w '^QSUB_MEMORY' | awk -F 'QSUB_MEMORY=' '{print $2}')
+	memory_exonkey=$( cat $config | grep -w '^QSUB_EXONKEY_MEMORY' | awk -F 'QSUB_EXONKEY_MEMORY=' '{print $2}')
+	memory_bam2wig=$( cat $config | grep -w '^QSUB_BAM2WIG_MEMORY' | awk -F 'QSUB_BAM2WIG_MEMORY=' '{print $2}')
 	merge_overlaps=$( cat $config | grep -w '^MERGE_OVERLAPPING_REGIONS' | cut -d '=' -f2)
 	split_size=$( cat $config | grep -w '^SPLIT_EXON_SIZE' | cut -d '=' -f2)
 	extension_buffer=$( cat $config | grep -w '^EXTENSION_BUFFER' | cut -d '=' -f2)
@@ -40,13 +41,13 @@ else
 	config=$output_dir/sge_config.txt
 
 	# create exon key
-	EXONKEY=$(qsub -V -wd $output_dir/logs -q $queue -m a -M $email $memory $script_path/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $output_dir/PatternCNV.Exon.Key.txt -b $bin_size -t $config -x $extension_buffer -s $split_size $merge_param)
+	EXONKEY=$(qsub -V -wd $output_dir/logs -q $queue -m a -M $email $memory_exonkey $script_path/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $output_dir/PatternCNV.Exon.Key.txt -b $bin_size -t $config -x $extension_buffer -s $split_size $merge_param)
 	jobid_exonkey=$(echo $EXONKEY | cut -d ' ' -f3)
 
 	# bam2wig
 	for bam in $(cat $bams_config)
 	do
-		qsub -V -wd $output_dir/logs -q $queue -m a -M $email $memory -hold_jid $jobid_exonkey $script_path/bam2wig/bam2wig.sh -i $bam -o $output_dir -b $bin_size -m $min_mapping_qual -t $config -e $output_dir/PatternCNV.Exon.Key.txt $merge_param
+		qsub -V -wd $output_dir/logs -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_exonkey $script_path/bam2wig/bam2wig.sh -i $bam -o $output_dir -b $bin_size -m $min_mapping_qual -t $config -e $output_dir/PatternCNV.Exon.Key.txt $merge_param
 	done
 	echo $(date)
 fi

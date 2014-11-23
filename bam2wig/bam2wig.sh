@@ -1,7 +1,7 @@
 #!/bin/sh
 # create a coverage wig file from a sorted, duplicate marked bam file
 # Jared Evans evans.jared@mayo.edu
-# 7/7/14
+# 11/2014
 
 usage()
 {
@@ -27,6 +27,10 @@ OPTIONS:
 "
 exit 1;
 }
+
+# set defaults
+bin_size=10
+min_mapq=20
 
 while getopts "i:o:b:m:t:e:nh" opt; do
 	case $opt in
@@ -56,16 +60,6 @@ fi
 	echo "Starting bam2wig"
 	echo $(date)
 	
-	# set defaults
-	if [ -z "$bin_size" ]
-	then
-		bin_size=10
-	fi
-	if [ -z "$min_mapq" ]
-	then
-		min_mapq=20
-	fi
-
 	filename=$(basename $input_bam)
 
 	# get paths to local installs of tools
@@ -86,19 +80,24 @@ fi
 	# newer BEDtools versions don't work unless added to PATH
 	export PATH=$bedtools:$PATH
 
+	# bams can be comma seperated if split into parts
+	input_bams_array=($(echo $input_bam | tr "," " "))
+
 	# check if bam is sorted
-	sorted=$($samtools view -H $input_bam | grep "^@HD" | grep "SO:coordinate" | wc -l)
-	if [ $sorted == 0 ]
-	then
-		echo "ERROR: The BAM file isnt coordinate sorted. Please sort the BAM and try again."
-		exit 1
-	fi
+	for bam in "${input_bams_array[@]}"; do
+		sorted=$($samtools view -H $bam | grep "^@HD" | grep "SO:coordinate" | wc -l)
+		if [ $sorted == 0 ]
+		then
+			echo "ERROR! The BAM file ${bam} isnt coordinate sorted. Please sort the BAM and try again."
+			exit 1
+		fi
+	done
 
 	# create dirs
 	mkdir -p $output_dir
 
 	# get chrs
-	chrs=$($samtools view -H $input_bam | grep "^@SQ" | awk '{split($0,sn,"SN:"); print sn[2]}' | awk 'ORS=":"{print $1}')
+	chrs=$($samtools view -H ${input_bams_array[0]} | grep "^@SQ" | awk '{split($0,sn,"SN:"); print sn[2]}' | awk 'ORS=":"{print $1}')
 
 	if [ $exon_bed ]
 	then	
@@ -115,7 +114,7 @@ fi
 		name_col=""
 		if [ $column_count -gt 3 ]
 		then
-			name_col="-nms"
+			name_col="-c 4 -o distinct -delim \",\""
 		fi
 		# sort, merge, and bin bed file
 		# sorting in same chr order as bam (required for coverage calculation)
@@ -125,7 +124,11 @@ fi
 			then
 				grep -w "^${chr}" $exon_bed | sort -k2n -T $output_dir | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4}' >> $output_dir/$filename.exons.bed
 			else
-				grep -w "^${chr}" $exon_bed | sort -k2n -T $output_dir | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4}' | $bedtools/mergeBed -d -1 $name_col >> $output_dir/$filename.exons.bed
+				row_count=$(grep -w "^${chr}" $exon_bed | head | wc -l)
+				if [ $row_count -gt 0 ]
+				then
+					grep -w "^${chr}" $exon_bed | sort -k2n -T $output_dir | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4}' | $bedtools/mergeBed -i stdin -d -1 $name_col >> $output_dir/$filename.exons.bed
+				fi
 			fi
 		done
 		if [ -f $output_dir/$filename.exon.tmp.bed ]
@@ -147,7 +150,13 @@ fi
 
 	# calculate coverage, filter duplicates and low qual reads
 	echo "Calculating coverage from pileup..."
-	$samtools mpileup -d 10000000 -Q 0 -q $min_mapq $input_bam | $script_path/pileup_coverage.pl $output_dir/$filename.exons_binned.bed $output_dir/$filename.coverage.txt $chrs
+	input_bams_list="${input_bams_array[@]}"
+	if [ ${#input_bams_array[@]} -gt 1 ]
+	then
+		$samtools cat $input_bams_list | $samtools mpileup -d 10000000 -Q 0 -q $min_mapq - | $script_path/pileup_coverage.pl $output_dir/$filename.exons_binned.bed $output_dir/$filename.coverage.txt $chrs
+	else
+		$samtools mpileup -d 10000000 -Q 0 -q $min_mapq $input_bams_list | $script_path/pileup_coverage.pl $output_dir/$filename.exons_binned.bed $output_dir/$filename.coverage.txt $chrs
+	fi
 	rm $output_dir/$filename.exons_binned.bed
 
 	# sort bed to match exon key order (very important)
@@ -165,7 +174,7 @@ fi
 	# quick QC check on wig file
 	#$script_path/count_wig_chrs.pl $output_dir/$filename.coverage.wig | awk -F"\t" '($2 == 0){print "WARNING! There is 0 coverage in the wig file for this chromosome: "$0}'
 	# Give a warning if any chromosome has 0 coverage
-	cat $output_dir/$filename.coverage.wig | perl -F/\\s/ -slane 'BEGIN{$current_chr=""; $current_chr_count=0;}; if($F[0] eq "fixedStep"){@chr=split("=",$F[1]); if($chr[1] ne $current_chr){print "WARNING! There is 0 coverage in the wig file for chromosome: ".$current_chr if $current_chr ne "" and $current_chr_count == 0; $current_chr=$chr[1]; $current_chr_count=0;}}else{$current_chr_count+=$F[0];};END{print "WARNING! There is 0 coverage in the wig file for chromosome: ".$current_chr if $current_chr ne "" and $current_chr_count == 0;}'
+	cat $output_dir/$filename.coverage.wig | perl -F/\\s/ -slane 'BEGIN{$current_chr=""; $current_chr_count=0;}; if($F[0] eq "fixedStep"){@chr=split("=",$F[1]); if($chr[1] ne $current_chr){print "WARNING! There is 0 coverage in the $filename.coverage.wig file for chromosome: ".$current_chr if $current_chr ne "" and $current_chr_count == 0; $current_chr=$chr[1]; $current_chr_count=0;}}else{$current_chr_count+=$F[0];};END{print "WARNING! There is 0 coverage in the $filename.coverage.wig file for chromosome: ".$current_chr if $current_chr ne "" and $current_chr_count == 0;};' -- -filename=$filename
 
 	if [ $exon_key -gt 0 ]
 	then
