@@ -54,8 +54,10 @@ echo $(date)
 output_dir=$( cat $config | grep -w '^OUTPUT_DIR' | cut -d '=' -f2)
 R=$( cat $config | grep -w '^R' | cut -d '=' -f2)
 sample_info=$( cat $config | grep -w '^SAMPLE_INFO' | cut -d '=' -f2)
-
 patterncnv_path=$( cat $config | grep -w '^PATTERNCNV' | cut -d '=' -f2)
+
+# set new TMPDIR variable so R can start even if /tmp/ is full
+export TMPDIR=$output_dir
 
 # check to see if Somatic calling is needed, otherwise just perform Germline calling
 sample_type=$(awk -F"\t" '($3 == "Somatic"){print "Somatic"}' $sample_info )
