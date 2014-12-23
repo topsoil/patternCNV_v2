@@ -52,7 +52,7 @@ if(germline_count >= 3){
 	patCNV.exon.segmentCNV(session.info=somatic.sessionInfo, CNV.mtx=somatic.CNV.res$CNV.mtx, pattern.list=exon.pattern.res)
 
 }else{
-	print("You need at least 3 Germline samples to run the latest version of PatternCNV. Running the old somatic-only version instead...")
+	print("You need at least 3 Germline samples to run this version of PatternCNV. Running the old version now which performs somatic calling in a pair-wise fashion...")
 
 	.libPaths(paste(arg[2],"/old_somatic_version",sep=""))
 

@@ -17,6 +17,12 @@ source(paste(arg[2],"/patCNV.load.package.R",sep=""), chdir=TRUE)
 print("#=== step 1. initialize session")
 germline.sessionInfo <- patCNV.load.config(config.ini.path)
 
+germline_count <- length(which(germline.sessionInfo$file_info$sample.type=="Germline"))
+
+if(germline_count < 3){
+	stop("ERROR! You need at least 3 Germline samples to run this version of PatternCNV.")
+}
+
 print("#=== step 2(a) germline coverage")
 germline.covg.res <- patCNV.scan.covg.multi(session_info=germline.sessionInfo, sample.type='Germline', is.plot=FALSE)
 

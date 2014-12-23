@@ -1,6 +1,6 @@
 #!/bin/sh
-# wraper script to run PatternCNV
-# 11/2014
+# wrapper script to run PatternCNV
+# 12/2014
 
 usage()
 {
@@ -25,6 +25,7 @@ OPTIONS:
 -j                      Optional comma separated list of job IDs for PatternCNV to wait on (qsub -hold_jid).
 -w                      Optional prefix to use in job names (qsub -N)
 -u                      Optional suffix to use in job names (qsub -N)
+-l                      Optional path to logs folder if user doesn't want to use the default location
 -h                      print out this help message
 "
 exit 1;
@@ -37,7 +38,7 @@ merge_overlaps="YES"
 split_size=1000
 extension_buffer=100
 
-while getopts "c:bmxznvj:w:u:h" opt; do
+while getopts "c:bmxznvj:w:u:l:h" opt; do
 	case $opt in
 		c) config=$OPTARG;;
 		b) bin_size=$OPTARG;;
@@ -49,6 +50,7 @@ while getopts "c:bmxznvj:w:u:h" opt; do
 		j) jobs_to_hold_for=$OPTARG;;
 		w) job_name_prefix=$OPTARG;;
 		u) job_name_suffix=$OPTARG;;
+		l) user_logs_output=$OPTARG;;
 		h) usage;;
 		\?) echo "See available options:" >&2
 		usage;;
@@ -76,12 +78,6 @@ sample_info=$( cat $config | grep -w '^SAMPLE_INFO' | cut -d '=' -f2)
 capture_bed=$( cat $config | grep -w '^CAPTUREKIT_BED' | cut -d '=' -f2)
 exon_bed=$( cat $config | grep -w '^EXON_BED' | cut -d '=' -f2)
 
-#bin_size=$( cat $config | grep -w '^BIN_SIZE' | cut -d '=' -f2)
-#min_mapping_qual=$( cat $config | grep -w '^MIN_MAPPING_QUAL' | cut -d '=' -f2)
-#merge_overlaps=$( cat $config | grep -w '^MERGE_OVERLAPPING_REGIONS' | cut -d '=' -f2)
-#split_size=$( cat $config | grep -w '^SPLIT_EXON_SIZE' | cut -d '=' -f2)
-#extension_buffer=$( cat $config | grep -w '^EXTENSION_BUFFER' | cut -d '=' -f2)
-
 patterncnv_path=$( cat $config | grep -w '^PATTERNCNV' | cut -d '=' -f2)
 samtools_path=$( cat $config | grep -w '^SAMTOOLS' | cut -d '=' -f2)
 bedtools_path=$( cat $config | grep -w '^BEDTOOLS' | cut -d '=' -f2)
@@ -93,11 +89,15 @@ memory_bam2wig=$( cat $config | grep -w '^QSUB_BAM2WIG_MEMORY' | awk -F 'QSUB_BA
 memory_callcnvs=$( cat $config | grep -w '^QSUB_CALLCNVS_MEMORY' | awk -F 'QSUB_CALLCNVS_MEMORY=' '{print $2}')
 
 # create output dirs
+logs_dir=$output_dir/logs
+if [ "$user_logs_output" ]
+then
+	logs_dir=$user_logs_output
+fi
 mkdir -p $output_dir
-mkdir -p $output_dir/logs
+mkdir -p $logs_dir
 mkdir -p $output_dir/wigs
 mkdir -p $output_dir/configs
-#mkdir -p $output_dir/qc
 mkdir -p $output_dir/cnv-txt
 mkdir -p $output_dir/cnv-plot
 
@@ -140,23 +140,31 @@ then
 fi
 
 # create exon key
-EXONKEY=$(qsub -wd $output_dir/logs -q $queue -m a -M $email $memory_exonkey $previous_jobids -N $job_name.exon_key${job_suffix} $patterncnv_path/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $merge_param)
+qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_exonkey $previous_jobids -N $job_name.exon_key.allsamples${job_suffix} $patterncnv_path/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $merge_param"
+EXONKEY=$($qsub_command)
+echo -e "\n# PatternCNV ExonKey Job Submission for all samples\n${qsub_command}"
+echo -e "${EXONKEY}\n"
 jobid_exonkey=$(echo $EXONKEY | cut -d ' ' -f3)
 
-# bam2wig
+# bam2wig for each sample
 jobid_bam2wig=""
-for bam in $(cut -f5 $sample_info | sed 1d)
+for sample in $(cut -f1 $sample_info | sed 1d)
 do
-	BAM2WIG=$(qsub -wd $output_dir/logs -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_exonkey -N $job_name.bam2wig${job_suffix} $patterncnv_path/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $merge_param)
+	bam=$(grep -w "^$sample" $sample_info | cut -f5)
+	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_exonkey -N $job_name.bam2wig.${sample}${job_suffix} $patterncnv_path/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $merge_param"
+	BAM2WIG=$($qsub_command)
+	echo -e "# PatternCNV BAM2WIG Job Submission for sample ${sample}\n${qsub_command}"
+	echo -e "${BAM2WIG}\n"
 	jobid=$(echo $BAM2WIG | cut -d ' ' -f3)
 	jobid_bam2wig="${jobid},${jobid_bam2wig}"
 done
 
 
 # call CNVs
-qsub -wd $output_dir/logs -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig -N $job_name.call_cnvs${job_suffix} $patterncnv_path/call_cnvs.sh -c $config -v
-
-
+qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig -N $job_name.call_cnvs.allsamples${job_suffix} $patterncnv_path/call_cnvs.sh -c $config -v"
+echo -e "# PatternCNV CallCNVs Job Submission for all samples\n${qsub_command}"
+CALLCNVS=$($qsub_command)
+echo -e "${CALLCNVS}\n"
 
 echo "End PatterCNV Wrapper"
 echo $(date)
