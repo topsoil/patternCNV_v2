@@ -166,6 +166,6 @@ echo -e "# PatternCNV CallCNVs Job Submission for all samples\n${qsub_command}"
 CALLCNVS=$($qsub_command)
 echo -e "${CALLCNVS}\n"
 
-echo "End PatterCNV Wrapper"
+echo "End PatternCNV Wrapper"
 echo $(date)
 
