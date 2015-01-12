@@ -18,8 +18,13 @@ print("#=== step 1. initialize session")
 somatic.sessionInfo <- patCNV.load.config(config.ini.path)
 
 germline_count <- length(which(somatic.sessionInfo$file_info$sample.type=="Germline"))
+germline_count
 
-if(germline_count >= 3){
+germline_samples <- subset(somatic.sessionInfo$file_info$sample.name,somatic.sessionInfo$file_info$sample.type=="Germline")
+germline_samples
+
+# check if there are enough germline samples with no duplicate samples
+if(germline_count >= 3 & !anyDuplicated(germline_samples)){
 
 	print("#=== step 2(a) germline coverage")
 	germline.covg.res <- patCNV.scan.covg.multi(session_info=somatic.sessionInfo, sample.type='Germline', is.plot=FALSE)
@@ -52,7 +57,7 @@ if(germline_count >= 3){
 	patCNV.exon.segmentCNV(session.info=somatic.sessionInfo, CNV.mtx=somatic.CNV.res$CNV.mtx, pattern.list=exon.pattern.res)
 
 }else{
-	print("You need at least 3 Germline samples to run this version of PatternCNV. Running the old version now which performs somatic calling in a pair-wise fashion...")
+	print("You need at least 3 unique Germline samples to run this version of PatternCNV. Running the old version now which performs somatic calling in a pair-wise fashion...")
 
 	.libPaths(paste(arg[2],"/old_somatic_version",sep=""))
 

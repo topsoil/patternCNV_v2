@@ -146,11 +146,11 @@ echo -e "\n# PatternCNV ExonKey Job Submission for all samples\n${qsub_command}"
 echo -e "${EXONKEY}\n"
 jobid_exonkey=$(echo $EXONKEY | cut -d ' ' -f3)
 
-# bam2wig for each sample
+# bam2wig for each unique sample
 jobid_bam2wig=""
-for sample in $(cut -f1 $sample_info | sed 1d)
+for sample in $(cut -f1 $sample_info | sed 1d | sort | uniq)
 do
-	bam=$(grep -w "^$sample" $sample_info | cut -f5)
+	bam=$(grep -P "^${sample}\t" $sample_info | head -1 | cut -f5)
 	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_exonkey -N $job_name.bam2wig.${sample}${job_suffix} $patterncnv_path/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $merge_param"
 	BAM2WIG=$($qsub_command)
 	echo -e "# PatternCNV BAM2WIG Job Submission for sample ${sample}\n${qsub_command}"
