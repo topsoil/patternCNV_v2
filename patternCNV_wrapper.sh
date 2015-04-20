@@ -9,7 +9,8 @@ NAME:
 patternCNV_wrapper.sh
 
 DESCRIPTION:
-This wrapper script runs PatternCNV
+PatternCNV is designed to detect Germline or Somatic CNVs in exome or custom capture samples. This wrapper script will run 
+all of the PatternCNV components, including bam2wig, QC, GC correction, and CNV calling.
 
 USAGE:
 ./patternCNV_wrapper.sh -c config.txt > patternCNV.log 2>&1

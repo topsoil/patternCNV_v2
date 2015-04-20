@@ -71,6 +71,23 @@ else
 	$R/Rscript --vanilla $patterncnv_path/germline.cnv.R $output_dir $patterncnv_path/Rlib $output_dir/configs/config.ini
 fi
 
+# QC check, if files are missing then send email and exit 100
+cnv_txt_count=$(ls $output_dir/cnv-txt/*.txt | grep -v CNV_matrix | grep -v pval_matrix | wc -l)
+cnv_plot_count=$(ls $output_dir/cnv-plot/*.png| wc -l)
+if [ $cnv_txt_count -le 0 -o $cnv_plot_count -le 0 ]
+then
+	mailx=$(which mailx)
+	if [ "$mailx" != "" ] ; then
+		email=$(finger $USER | awk -F ';' '{print $2}' | head -n1)
+		TMPDIR=$output_dir
+		SUB="PatternCNV Error in CALL_CNVS script"
+		MES="PatternCNV ERROR! After CNV calling the number of CNV txt files (${cnv_txt_count}) or CNV plot files (${cnv_plot_count}) are not correct.\n\nSGE Log files:\n$SGE_STDERR_PATH\n$SGE_STDOUT_PATH\n\nFiles to check:\nOutput Directory:\n$output_dir\n"
+		echo -e "$MES" | mailx -s "$SUB" "$email"
+		sleep 15s
+	fi
+	exit 100;
+fi
+
 
 echo "End call_cnvs.sh"
 echo $(date)

@@ -139,7 +139,6 @@ fi
 		then
 			cp $output_dir/$filename.exons.bed $output_dir/$filename.exons_binned.bed
 		else
-			#$script_path/bin_exons.pl $output_dir/$filename.exons.bed $output_dir/$filename.exons_binned.bed $bin_size
 			# bin BED regions. If there are leftover lengths shorter than the bin_size then they are ignored
 			cat $output_dir/$filename.exons.bed | perl -slane '$gene=""; $gene="\t".$F[3] if defined $F[3]; $length=($F[2]-$F[1]); while($length >= $bin_size){print $F[0]."\t".$F[1]."\t".($F[1]+$bin_size).$gene; $F[1]+=$bin_size; $length-=$bin_size;};' -- -bin_size=$bin_size > $output_dir/$filename.exons_binned.bed
 		fi
@@ -172,7 +171,6 @@ fi
 	rm $output_dir/$filename.coverage.sort.txt
 	
 	# quick QC check on wig file
-	#$script_path/count_wig_chrs.pl $output_dir/$filename.coverage.wig | awk -F"\t" '($2 == 0){print "WARNING! There is 0 coverage in the wig file for this chromosome: "$0}'
 	# Give a warning if any chromosome has 0 coverage
 	cat $output_dir/$filename.coverage.wig | perl -F/\\s/ -slane 'BEGIN{$current_chr=""; $current_chr_count=0;}; if($F[0] eq "fixedStep"){@chr=split("=",$F[1]); if($chr[1] ne $current_chr){print "WARNING! There is 0 coverage in the $filename.coverage.wig file for chromosome: ".$current_chr if $current_chr ne "" and $current_chr_count == 0; $current_chr=$chr[1]; $current_chr_count=0;}}else{$current_chr_count+=$F[0];};END{print "WARNING! There is 0 coverage in the $filename.coverage.wig file for chromosome: ".$current_chr if $current_chr ne "" and $current_chr_count == 0;};' -- -filename=$filename
 
@@ -182,7 +180,18 @@ fi
 		exon_key_lines=$(awk -F"\t" '{sum+=($4+1)}END{print sum-1}' $exon_key_file)
 		if [ $wig_lines != $exon_key_lines ]
 		then
-			echo "ERROR! wig line count (${wig_lines}) doesn't match expected count from exon key (${exon_key_lines}) in ${filename}.coverage.wig"
+			echo "ERROR! wig line count (${wig_lines}) doesn't match expected count from exon key (${exon_key_lines}) in ${filename}.coverage.wig This can occur when contigs in the BAM file reference don't match the contig names in the exon or capture BED files, either from different naming conventions or additional contigs in the BED files. e.g. chr1 vs 1"
+			# send error email if mailx exists and exit 100:
+			mailx=`which mailx`
+			if [ "$mailx" != "" ] ; then
+				email=$(finger $USER | awk -F ';' '{print $2}' | head -n1)
+				TMPDIR=$output_dir
+				SUB="PatternCNV Error in BAM2WIG script"
+				MES="PatternCNV ERROR! WIG line count (${wig_lines}) doesn't match expected count from exon key (${exon_key_lines}) in ${filename}.coverage.wig\n\nThis can occur when contigs in the BAM file reference don't match the contig names in the exon or capture BED files, either from different naming conventions or additional contigs in the BED files. e.g. chr1 vs 1\n\nSGE Log files:\n$SGE_STDERR_PATH\n$SGE_STDOUT_PATH\n\nFiles to check:\nBAM file:\n$input_bam\nExon Key:\n$exon_bed\nOutput Directory:\n$output_dir\n"
+				echo -e "$MES" | mailx -s "$SUB" "$email"
+				sleep 15s
+			fi
+			exit 100;
 		fi
 	fi
 	gzip -f $output_dir/$filename.coverage.wig
