@@ -58,7 +58,7 @@ for (i in 1:length(function_vec))
 }
 
 cat('\n ========================================================================= \n')
-cat('\n R functions of pattern-CNV (ver 1.5) have been successfully loaded! \n')
+cat('\n R functions of pattern-CNV (ver 1.6) have been successfully loaded! \n')
 cat('\n To cite software \"Pattern-CNV\" in publications use: \n')
 cat('  Wang C, Evans JM, Bhagwate AV et al. \"PatternCNV: a versatile tool for detecting \n  copy number changes from exome sequencing data\". ')
 cat('Bioinformatics. 2014 Sep 15;30(18):2678-80. \n')
