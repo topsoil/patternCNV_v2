@@ -39,7 +39,7 @@ merge_overlaps="YES"
 split_size=1000
 extension_buffer=100
 
-while getopts "c:bmxznvj:w:u:l:h" opt; do
+while getopts "c:b:m:x:z:nvj:w:u:l:h" opt; do
 	case $opt in
 		c) config=$OPTARG;;
 		b) bin_size=$OPTARG;;
