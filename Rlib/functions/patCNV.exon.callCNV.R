@@ -4,6 +4,9 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
                                   feature.name.sep = " ",
                                   small.delta = 1e-2, SNR.dB.cut = 10, N.SNR.quantiles = 20)
   # output pval.mtx, CNV.mtx
+  # output exon_count_mtx, exon_RPKM_mtx
+  # return(list(total_count_vec=total_count_vec,
+  #          exon_count_mtx=exon_count_mtx,exon_RPKM_mtx=exon_RPKM_mtx))
 {
 
   N.sample <- length(covg.info$total_count_vec)
@@ -29,6 +32,10 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
   colnames(CNV.mtx) <- colnames(pval.mtx) <- sampleID.vec
   rownames(CNV.mtx) <- rownames(pval.mtx) <- featureID.vec
 
+  exon.raw.count.mtx <- covg.info$exon_count_mtx
+  exon.nmlz.RPKM.mtx <- covg.info$exon_RPKM_mtx
+  rownames(exon.raw.count.mtx) <- rownames(exon.nmlz.RPKM.mtx) <- featureID.vec
+  
   for( k in 1 : N.sample){
     individual.CNV.vec <-
       log2(covg.info$exon_RPKM_mtx[,k] + small.delta) -
@@ -90,18 +97,36 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
                                "_CNV_matrix.txt", sep = "")
   Pvalmtx.txt.filename <- paste(txt.output.DIR, CNV.type,
                                 "_pval_matrix.txt", sep = "")
+  RawCount.mtx.txt.filename <- paste(txt.output.DIR, CNV.type,
+                               "_raw_count_matrix.txt", sep = "")
+  RPKMmtx.txt.filename <- paste(txt.output.DIR, CNV.type,
+                                "_RPKM_matrix.txt", sep = "")
   if( CNV.type == "Germline" ){
     write.table(x = CNV.mtx, file = CNVmtx.txt.filename,
                 quote = FALSE, row.names = TRUE, sep = "\t")
     write.table(x = pval.mtx, file = Pvalmtx.txt.filename,
                 quote = FALSE, row.names = TRUE, sep = "\t")
-
+	
+	write.table(x = exon.raw.count.mtx, file = RawCount.mtx.txt.filename,
+                quote = FALSE, row.names = TRUE, sep = "\t")
+				
+    write.table(x = exon.nmlz.RPKM.mtx, file = RPKMmtx.txt.filename,
+                quote = FALSE, row.names = TRUE, sep = "\t")
+	
+  
     return(list(CNV.mtx = CNV.mtx,
                 pval.mtx = pval.mtx))
 
   } else { # somatic
     write.table(x = CNV.mtx, file = CNVmtx.txt.filename,
                 quote = FALSE, row.names = TRUE, sep = "\t")
+				
+	write.table(x = exon.raw.count.mtx, file = RawCount.mtx.txt.filename,
+                quote = FALSE, row.names = TRUE, sep = "\t")
+				
+    write.table(x = exon.nmlz.RPKM.mtx, file = RPKMmtx.txt.filename,
+                quote = FALSE, row.names = TRUE, sep = "\t")
+	
     return(list(CNV.mtx = CNV.mtx))
   }
 
