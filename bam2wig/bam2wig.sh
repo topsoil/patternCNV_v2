@@ -23,6 +23,7 @@ OPTIONS:
 -t	config.txt	Tool config file (required)
 -e	Exon.Key.txt	Exon key file
 -n			Not to merge overlapping BED regions
+-d                      Debug mode. Keeps intermediate files.
 -h			print out this help message
 "
 exit 1;
@@ -32,7 +33,7 @@ exit 1;
 bin_size=10
 min_mapq=20
 
-while getopts "i:o:b:m:t:e:nh" opt; do
+while getopts "i:o:b:m:t:e:ndh" opt; do
 	case $opt in
 		i) input_bam=$OPTARG;;
 		o) output_dir=$OPTARG;;
@@ -41,6 +42,7 @@ while getopts "i:o:b:m:t:e:nh" opt; do
 		t) tool_config=$OPTARG;;
 		e) exon_bed=$OPTARG;;
 		n) no_merge="YES";;
+		d) debug="YES";;
 		h) usage;;
 		\?) echo "See available options:" >&2
 		usage;;
@@ -156,20 +158,24 @@ fi
 	else
 		$samtools mpileup -d 10000000 -Q 0 -q $min_mapq $input_bams_list | $script_path/pileup_coverage.pl $output_dir/$filename.exons_binned.bed $output_dir/$filename.coverage.txt $chrs
 	fi
-	rm $output_dir/$filename.exons_binned.bed
 
 	# sort bed to match exon key order (very important)
 	cat $output_dir/$filename.coverage.txt | sort -k1,1 -k2,2g -T $output_dir > $output_dir/$filename.coverage.sort.txt
 	cat $output_dir/$filename.exons.bed | sort -k1,1 -k2,2g -T $output_dir > $output_dir/$filename.exons.sort.bed
-	rm $output_dir/$filename.exons.bed
 
 	# convert bed to wig
 	coverage_col=$(head -1 $output_dir/$filename.coverage.sort.txt | awk '{print NF}')
 	$script_path/bed2wig.pl $output_dir/$filename.coverage.sort.txt $output_dir/$filename.exons.sort.bed $output_dir/$filename.coverage.wig $bin_size $coverage_col
-	rm $output_dir/$filename.exons.sort.bed
-	rm $output_dir/$filename.coverage.txt
-	rm $output_dir/$filename.coverage.sort.txt
-	
+
+	if [ ! "$debug" ] # delete intermediate files
+	then
+		rm $output_dir/$filename.exons_binned.bed
+		rm $output_dir/$filename.exons.bed
+		rm $output_dir/$filename.exons.sort.bed
+		rm $output_dir/$filename.coverage.txt
+		rm $output_dir/$filename.coverage.sort.txt
+	fi
+
 	# quick QC check on wig file
 	# Give a warning if any chromosome has 0 coverage
 	cat $output_dir/$filename.coverage.wig | perl -F/\\s/ -slane 'BEGIN{$current_chr=""; $current_chr_count=0;}; if($F[0] eq "fixedStep"){@chr=split("=",$F[1]); if($chr[1] ne $current_chr){print "WARNING! There is 0 coverage in the $filename.coverage.wig file for chromosome: ".$current_chr if $current_chr ne "" and $current_chr_count == 0; $current_chr=$chr[1]; $current_chr_count=0;}}else{$current_chr_count+=$F[0];};END{print "WARNING! There is 0 coverage in the $filename.coverage.wig file for chromosome: ".$current_chr if $current_chr ne "" and $current_chr_count == 0;};' -- -filename=$filename

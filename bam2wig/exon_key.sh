@@ -24,12 +24,13 @@ OPTIONS:
 -s	1000		Split regions larger than this size. Default 1000
 -t	config.txt	Tool config file (required)
 -n                      Not to merge overlapping BED regions
+-d                      Debug mode. Keeps intermediate files.
 -h			print out this help message
 "
 exit 1;
 }
 
-while getopts "e:c:o:b:s:x:t:nh" opt; do
+while getopts "e:c:o:b:s:x:t:ndh" opt; do
 	case $opt in
 		e) exon_bed=$OPTARG;;
 		c) capture_bed=$OPTARG;;
@@ -39,6 +40,7 @@ while getopts "e:c:o:b:s:x:t:nh" opt; do
 		s) split_size=$OPTARG;;
 		t) tool_config=$OPTARG;;
 		n) no_merge="YES";;
+		d) debug="YES";;
 		h) usage;;
 		\?) echo "See available options:" >&2
 		usage;;
@@ -91,7 +93,7 @@ fi
 
 	echo "Sorting exon bed file..."
 	# union exon+capture beds, extend, sort, merge
-	if [ $no_merge ] # option to not merge overlapping BED regions
+	if [ "$no_merge" ] # option to not merge overlapping BED regions
 	then
 		cat $exon_bed | awk -F"\t" '{if($4 != ""){print $1"\t"$2"\t"$3"\t"$4}else{print $1"\t"$2"\t"$3"\ttmp_name"}}' | $bedtools/slopBed -b $extend_size -g $genome_size | sort -k1,1 -k2,2g | awk -F"\t" -v bin=$bin_size '{if(($3-$2) < bin){print $1"\t"$2"\t"($2+bin)"\t"$4}else{print $1"\t"$2"\t"$3"\t"$4}}' > $output_file.all_exons_merged.tmp.bed
 	else
@@ -104,16 +106,20 @@ fi
 
 	# intersect with capture kit
 	$bedtools/intersectBed -a $output_file.all_exons_merged.tmp.bed -b $capture_bed -c > $output_file.all_exons_merged.incapture.tmp.bed
-	rm $output_file.all_exons_merged.tmp.bed
 	
 	# create final exon key
 	cat $output_file.all_exons_merged.incapture.tmp.bed | perl -slane 'BEGIN{print "Chr\tStart\tStop\tBin_Count\tGenes\tOriginalExons\tInCapture"}; $leftover=0; $leftover=($F[2]-$F[1])%$bin_size if $bin_size != 0; $stop=$F[2]-$leftover; $bin_count=1; $bin_count=int(($stop-$F[1])/$bin_size) if $bin_size != 0; %uniq_genes=(); foreach $gene (split(",",$F[3])){$uniq_genes{$gene}=1 if $gene ne "tmp_placeholder"}; if(!%uniq_genes){$uniq_genes{$F[0]."_".($F[1]+1)}=1}; %uniq_originalexons=(); foreach $exon (split(",",$F[4])){$uniq_originalexons{$exon}=1 if $exon ne "tmp_placeholder"}; if(!%uniq_originalexons){$uniq_originalexons{"UndefinedGene_".$F[0]."_".($F[1]+1)."_".$F[2]}=1}; $F[5]=1 if $F[5] > 1; print $F[0]."\t".($F[1]+1)."\t".$stop."\t".$bin_count."\t".join(",",(sort keys %uniq_genes))."\t".join(",",(sort keys %uniq_originalexons))."\t".$F[5];' -- -bin_size=$bin_size > $output_file.all_exons_merged.incapture.tmp.bed.key
-	rm $output_file.all_exons_merged.incapture.tmp.bed
 
 	# add GC content info
 	sed 1d $output_file.all_exons_merged.incapture.tmp.bed.key | awk -F"\t" '{print $1"\t"$2-1"\t"$3}' | $bedtools/bedtools getfasta -fi $genome_ref -bed stdin -fo stdout -tab | perl -slane 'BEGIN{print "A\tC\tG\tT\tN\tGC_Content"}; $A=$C=$G=$T=$N=0; @chr=split(":",$F[0]); @pos=split("-",$chr[1]); $seq=uc($F[1]); $A=$seq =~ tr/A//; $C=$seq =~ tr/C//; $G=$seq =~ tr/G//; $T=$seq =~ tr/T//; $N=$seq =~ tr/N//; print $A."\t".$C."\t".$G."\t".$T."\t".$N."\t".(($G+$C)/($A+$C+$G+$T+$N))' > $output_file.all_exons_merged.incapture.tmp.bed.key.gc
 	paste $output_file.all_exons_merged.incapture.tmp.bed.key $output_file.all_exons_merged.incapture.tmp.bed.key.gc > $output_file
-	rm $output_file.all_exons_merged.incapture.tmp.bed.key $output_file.all_exons_merged.incapture.tmp.bed.key.gc
+
+	if [ ! "$debug" ] # delete intermediate files
+	then
+		rm $output_file.all_exons_merged.tmp.bed
+		rm $output_file.all_exons_merged.incapture.tmp.bed
+		rm $output_file.all_exons_merged.incapture.tmp.bed.key $output_file.all_exons_merged.incapture.tmp.bed.key.gc
+	fi
 
 	echo "Finished creating exon key."
 	echo $(date)

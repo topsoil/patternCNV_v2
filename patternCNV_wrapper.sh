@@ -27,6 +27,7 @@ OPTIONS:
 -w                      Optional prefix to use in job names (qsub -N)
 -u                      Optional suffix to use in job names (qsub -N)
 -l                      Optional path to logs folder if user doesn't want to use the default location
+-d			Debug mode. Keeps exon bed and bam2wig intermediate files.
 -h                      print out this help message
 "
 exit 1;
@@ -39,7 +40,7 @@ merge_overlaps="YES"
 split_size=1000
 extension_buffer=100
 
-while getopts "c:b:m:x:z:nvj:w:u:l:h" opt; do
+while getopts "c:b:m:x:z:nvdj:w:u:l:h" opt; do
 	case $opt in
 		c) config=$OPTARG;;
 		b) bin_size=$OPTARG;;
@@ -48,6 +49,7 @@ while getopts "c:b:m:x:z:nvj:w:u:l:h" opt; do
 		n) merge_overlaps="NO";;
 		z) split_size=$OPTARG;;
 		v) verbose="YES";;
+		d) debug="YES";;
 		j) jobs_to_hold_for=$OPTARG;;
 		w) job_name_prefix=$OPTARG;;
 		u) job_name_suffix=$OPTARG;;
@@ -116,10 +118,14 @@ echo "txt_output_DIR = '$output_dir/cnv-txt/'" >> $output_dir/configs/config.ini
 echo "exon_key_file = '$exon_key'" >> $output_dir/configs/config.ini
 echo "sample_info_file = '$sample_info'" >> $output_dir/configs/config.ini
 
-merge_param=""
+additional_params=""
 if [ $merge_overlaps == "NO" ]
 then
-	merge_param="-n"
+	additional_params="${additional_params}-n "
+fi
+if [ "$debug" ]
+then
+	additional_params="${additional_params}-d "
 fi
 
 previous_jobids=""
@@ -141,7 +147,7 @@ then
 fi
 
 # create exon key
-qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_exonkey $previous_jobids -N $job_name.exon_key.allsamples${job_suffix} $patterncnv_path/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $merge_param"
+qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_exonkey $previous_jobids -N $job_name.exon_key.allsamples${job_suffix} $patterncnv_path/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $additional_params"
 EXONKEY=$($qsub_command)
 echo -e "\n# PatternCNV ExonKey Job Submission for all samples\n${qsub_command}"
 echo -e "${EXONKEY}\n"
@@ -152,7 +158,7 @@ jobid_bam2wig=""
 for sample in $(cut -f1 $sample_info | sed 1d | sort | uniq)
 do
 	bam=$(grep -P "^${sample}\t" $sample_info | head -1 | cut -f5)
-	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_exonkey -N $job_name.bam2wig.${sample}${job_suffix} $patterncnv_path/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $merge_param"
+	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_exonkey -N $job_name.bam2wig.${sample}${job_suffix} $patterncnv_path/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $additional_params"
 	BAM2WIG=$($qsub_command)
 	echo -e "# PatternCNV BAM2WIG Job Submission for sample ${sample}\n${qsub_command}"
 	echo -e "${BAM2WIG}\n"
