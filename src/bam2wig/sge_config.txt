@@ -1,0 +1,20 @@
+EMAIL=evans.jared@mayo.edu
+QUEUE=1-day
+OUTPUT_DIR=/data2/bsi/staff_analysis/m088341/tools/PatternCNV/sge_test
+
+BAMS_CONFIG=/projects/bsi/bioinf_int/s112423.PatternCNV/trunk/bam2wig/sge_bams_config.txt
+CAPTUREKIT_BED=/data5/bsi/refdata/exomeCapture/SureSelect_All_Exon_V4+UTRs_with_annotation_hg19_.bed
+EXON_BED=/data2/bsi/staff_analysis/m088341/tools/PatternCNV/reference/exon_beds/refflat_exons_hg19.bed
+GENOME_SIZE=/projects/bsi/bioinf_int/s112423.PatternCNV/trunk/data/human_37.1.genome
+GENOME_REF=/data2/bsi/reference/sequence/human/ncbi/37.1/allchr.fa
+
+BIN_SIZE=10
+MIN_MAPPING_QUAL=20
+MERGE_OVERLAPPING_REGIONS=YES
+SPLIT_EXON_SIZE=1000
+EXTENSION_BUFFER=100
+PATTERNCNV=/projects/bsi/bioinf_int/s112423.PatternCNV/trunk
+SAMTOOLS=/projects/bsi/bictools/apps/alignment/samtools/samtools-0.1.18/samtools
+BEDTOOLS=/projects/bsi/bictools/apps/misc/BEDTools/2.15.0/bin
+QSUB_EXONKEY_MEMORY=-l h_vmem=4G -l h_stack=10M
+QSUB_BAM2WIG_MEMORY=-l h_vmem=2G -l h_stack=10M
