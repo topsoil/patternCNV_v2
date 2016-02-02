@@ -66,7 +66,7 @@ fi
 
 	# get paths to local installs of tools
 	script_path=$(grep "^PATTERNCNV=" $tool_config | cut -d"=" -f2)
-	script_path=${script_path}/bam2wig
+	script_path=${script_path}/src/bam2wig
 	samtools=$(grep "^SAMTOOLS=" $tool_config | cut -d"=" -f2)
 	bedtools=$(grep "^BEDTOOLS=" $tool_config | cut -d"=" -f2)
 

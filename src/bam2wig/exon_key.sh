@@ -10,10 +10,10 @@ NAME:
 exon_key.sh 
 
 DESCRIPTION:
-This script creates a coverage WIG file from a sorted BAM file
+This script creates an exon key files used for PatternCNV
 
 USAGE:
-./bam2wig.sh -i input.bam -o /output/directory/path/ -b 10 -t config.txt -e Exon.Key.txt
+./exon_key.sh -e exon.bed -c capturekit.bed -o Exon.Key.txt -c config.txt
 
 OPTIONS:
 -e	exon.bed	Exon BED file (required)
