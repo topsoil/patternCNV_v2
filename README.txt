@@ -17,8 +17,8 @@ Wang, C., J. M. Evans, et al. (2014). PatternCNV: a versatile tool for detecting
 from exome sequencing data. Bioinformatics 30(18): 2678-2680.
 
 
-AUTHORS
--------
+CONTACTS
+--------
 
 Chen Wang (wang.chen@mayo.edu)
 Jared Evans (evans.jared@mayo.edu)
@@ -100,6 +100,8 @@ sample1_tumor	pair1	Somatic	1	/path/to/sample1_tumor.bam
 CAPTUREKIT_BED
 --------------
 
+3 column capture region:
+
 chr1	10000	10200
 chr1	11000	11200
 ...
@@ -107,6 +109,8 @@ chr1	11000	11200
 
 EXON_BED
 --------
+
+4 column exon definitions with 4th column being gene name:
 
 chr1	24737	24891	WASH7P
 chr1	29320	29370	WASH7P

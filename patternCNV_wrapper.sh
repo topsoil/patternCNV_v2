@@ -150,7 +150,7 @@ then
 fi
 
 # create exon key
-pcnv_command="$patterncnv_path/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $additional_params"
+pcnv_command="$patterncnv_path/src/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $additional_params"
 if [ "$serial" == "YES" ]
 then
 	$pcnv_command
@@ -168,7 +168,7 @@ jobid_bam2wig=""
 for sample in $(cut -f1 $sample_info | sed 1d | sort | uniq)
 do
 	bam=$(grep -P "^${sample}\t" $sample_info | head -1 | cut -f5)
-	pcnv_command="$patterncnv_path/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $additional_params"
+	pcnv_command="$patterncnv_path/src/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $additional_params"
 	if [ "$serial" == "YES" ]
 	then
 		$pcnv_command
@@ -185,7 +185,7 @@ done
 
 
 # call CNVs
-pcnv_command="$patterncnv_path/call_cnvs.sh -c $config -v"
+pcnv_command="$patterncnv_path/src/call_cnvs.sh -c $config -v"
 if [ "$serial" == "YES" ]
 then
 	$pcnv_command
