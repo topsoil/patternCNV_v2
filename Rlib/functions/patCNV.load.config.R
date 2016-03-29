@@ -57,7 +57,7 @@ patCNV.load.config <- function( config_file )
  #=== load sample_info
  cat('\n Loading sample information from \"', sample_info_file, '\"',sep='')
  file_info <- read.delim(sample_info_file,stringsAsFactors=FALSE)
- file_info$ID <- paste(file_info$sample.name,'(',file_info$sample.type,')',sep='') # unique ID = name + type
+ file_info$ID <- paste(file_info$sample.name,'_',file_info$sample.type,sep='') # unique ID = name + type
  cat('\n Number of samples:', nrow(file_info))
  cat('\n Sample type distributions:')
  print(table(file_info$sample.type))
