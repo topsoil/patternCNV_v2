@@ -5,7 +5,6 @@ patCNV.compute.CNV.multi <- function( session_info, sample.type=NULL,
 
 {
    
-
   #=========== loading configuration information
   plot_output_DIR <- session_info$DIR_info$plot_output_DIR
   txt_output_DIR <- session_info$DIR_info$txt_output_DIR
@@ -54,7 +53,7 @@ patCNV.compute.CNV.multi <- function( session_info, sample.type=NULL,
     setTxtProgressBar(pb, k)    
 	   
     cnv_res <- patCNV.compute.CNV.single ( session_info, sel.sample.name, 
-					ref_type=ref_type,episl=episl, 									small_delta=small_delta,bin_size=bin_size,
+					ref_type=ref_type,episl=episl,small_delta=small_delta,bin_size=bin_size,
 					is.verbose=is.verbose)
     CNV.mtx[,k] <- cnv_res$CNV
   }  

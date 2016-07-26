@@ -3,7 +3,7 @@ patCNV.learn.patterns.ME <- function( session_info, covg_info,
                                   exclude_sample_name = NULL )
                               
 {
-  
+
   #============= summarizing total counts and mean/median RPKM
   total_count_vec <- covg_info$total_count_vec
   mean_RPKM_file <- session_info$Misc$mean_RPKM_file

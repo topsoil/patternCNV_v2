@@ -21,20 +21,16 @@ function_vec <- c(
 		  "patCNV.scan.covg.multi.R", 		  
 		  "patCNV.coverage.QC.R",
 		  "patCNV.chr.coverage.QC.R",
- 
-      
-	      "patCNV.learn.patterns.R",
-		  "patCNV.learn.patterns.ME.R",
 
+	          "patCNV.learn.patterns.R",
+		  "patCNV.learn.patterns.ME.R",
 
 		  "patCNV.compute.CNV.single.R",
 		  "patCNV.compute.CNV.multi.R",			
 		  "patCNV.fit.null.model.R" ,
 		  "patCNV.estimate.FDR.R",
 
-      
-			"patCNV.export.simple.tables.R",
-      
+		   "patCNV.export.simple.tables.R",      
 		   "patCNV.export.CNV.tables.R",
 		   "patCNV.plot.Chr.CNV.R",
 		   "patCNV.plot.autosome.CNV.R",
@@ -49,12 +45,16 @@ function_vec <- c(
 			"patCNV.evaluate.CNVconf.R",
 			"patCNV.exon.callCNV.R",
 			"patCNV.exon.segmentCNV.R"
+			
+		# Hugues's Sex chromosome version
+		,"patCNV.Somatic.SexCheck.R","patCNV.adjustXChrom.R", "patCNV.adjustGuessedMale.R","patCNV.getSexTitleString.R"
+
                                             			)		 	
 
 for (i in 1:length(function_vec))
 {
   tmp_func <- paste(patCNV.install.DIR,'/functions/',function_vec[i],sep='')
-  source(tmp_func)
+  source(tmp_func,chdir=TRUE)
 }
 
 cat('\n ========================================================================= \n')

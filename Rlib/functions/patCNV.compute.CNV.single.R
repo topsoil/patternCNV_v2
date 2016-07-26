@@ -9,43 +9,53 @@ patCNV.compute.CNV.single <- function( session_info, sample_name,
 # ref_avg_wigfile:    reference or average pattern wig file
 # var_wigfile:	      varability pattern wig file 	
 {
-   
+  knownSex<-NA
+
+
+  nonXY<-which((session.info$exon_info$Chr!="chrX" & session.info$exon_info$Chr!="chrY") | session.info$exon_info$PAR==1)
+  haploidExons<-which((session.info$exon_info$Chr=="chrX" | session.info$exon_info$Chr=="chrY") & session.info$exon_info$PAR==0)
+  X.FemalevsMale.ratio<-session_info$X.FemalevsMale.ratio
+  XLogShift<-log2(X.FemalevsMale.ratio)
+
   sample.idx <- which(session_info$file_info$sample.name==sample_name)
+  if("sex" %in% colnames(session.info$file_info)) {
+      knownSex <-session.info$file_info$sex[sample.idx]
+  }
+
   wig_filename <- session_info$file_info$file.name[sample.idx]
   sample_ID <- session_info$file_info$ID[sample.idx]
   
   exon_bin_vec <- session_info$exon_info$exon_bin_vec
   is_capture_vec <- session_info$exon_info$is_capture_vec
 
-  if(ref_type=='average.pattern')
-	{ref_avg_wigfile <- session_info$pattern$avg_wig}
+  if(ref_type=='average.pattern') {
+        ref_avg_wigfile <- session_info$pattern$avg_wig
+  }
   var_wigfile <- session_info$pattern$var_wig
   
   if(ref_type=='Germline'|ref_type=='basic.paired')	{
 		sel.sample.subjectID <- session_info$file_info$subject.ID[sample.idx]
-		sel.sample.germline.idx <- 
-			which(session_info$file_info$subject.ID==sel.sample.subjectID &
-				session_info$file_info$sample.type=='Germline')
+		sel.sample.germline.idx <- which(session_info$file_info$subject.ID==sel.sample.subjectID &
+				                 session_info$file_info$sample.type=='Germline')
 		if (!length(sel.sample.germline.idx))	{
-			stop(paste('Germline sample of subject',sel.sample.subjectID,'cannot be located'))		}
+			stop(paste('Germline sample of subject',sel.sample.subjectID,'cannot be located'))		
+		}
 		ref_avg_wigfile <- session_info$file_info$file.name[sel.sample.germline.idx]
 		germline_sample_ID <- session_info$file_info$ID[sel.sample.germline.idx]
-		germline.exon_vec <- 
-              patCNV.scan.covg.single(ref_avg_wigfile,germline_sample_ID,
-			exon_bin_vec,is_capture_vec,is.plot=FALSE, bin_size=bin_size)
-
-		  germline.total_count <- sum(germline.exon_vec,na.rm=TRUE)
-	  	  germline.RPKM_deno <- bin_size*germline.total_count/1e9
-	}
+		germline.exon_vec <-  patCNV.scan.covg.single(ref_avg_wigfile,germline_sample_ID,exon_bin_vec,is_capture_vec,is.plot=FALSE, bin_size=bin_size)
+		germline.total_count <- sum(germline.exon_vec[nonXY,],na.rm=TRUE)
+		print(paste("Total_Coverage: ",sel.sample.subjectID," : ",germline.total_count,sep=""))
+	  	germline.RPKM_deno <- bin_size*germline.total_count/1e9
+  }
 
   if(is.verbose) {  cat('\n Processing',sample_ID,':\n',wig_filename,'\n',sep=' ')  }
 
   
-  exon_vec <- 
-      patCNV.scan.covg.single(wig_filename,sample_ID,exon_bin_vec,is_capture_vec,
+  exon_vec <- patCNV.scan.covg.single(wig_filename,sample_ID,exon_bin_vec,is_capture_vec,
                              is.plot=FALSE, bin_size=bin_size)
       
-  total_count <- sum(exon_vec,na.rm=TRUE)  
+  total_count <- sum(exon_vec[nonXY,],na.rm=TRUE)  
+  print(paste("Total_Coverage: ",sample_ID," : ",total_count,sep=""))
   
 
    N_exons <- length(exon_bin_vec)
@@ -103,9 +113,13 @@ patCNV.compute.CNV.single <- function( session_info, sample_name,
   
     #========= computing CNV 
     weight_vec <- 1/(SD_vec+small_delta)^2
-    CNV_vec[k] <- sum( (y_vec-mean_vec) * weight_vec )/sum(weight_vec,na.rm=TRUE)
- #   CNV_SD_vec[k] <- sqrt(1/sum(weight_vec))
-     
+    if((!is.na(knownSex)) && knownSex == "MALE" && k %in% haploidExons) {
+     # Reference is corrected, but not sample
+      CNV_vec[k] <- XLogShift+sum((y_vec-mean_vec) * weight_vec )/sum(weight_vec,na.rm=TRUE)
+    } else {
+      CNV_vec[k] <- sum( (y_vec-mean_vec) * weight_vec )/sum(weight_vec,na.rm=TRUE)
+   #   CNV_SD_vec[k] <- sqrt(1/sum(weight_vec))
+   }  
     
     #========= skip exon first line
     v <- readLines(case_wcon,1)
@@ -145,8 +159,13 @@ patCNV.compute.CNV.single <- function( session_info, sample_name,
   
     #========= computing CNV 
     weight_vec <- 1/(SD_vec+small_delta)^2
-    CNV_vec[k] <- sum( (y_vec-mean_vec) * weight_vec )/sum(weight_vec,na.rm=TRUE)
+    if((!is.na(knownSex)) && knownSex == "MALE" && k %in% haploidExons) {
+      # mean is corrected to diploid, but not sample..
+      CNV_vec[k] <- XLogShift+sum( (y_vec-mean_vec) * weight_vec )/sum(weight_vec,na.rm=TRUE)
+    } else {
+      CNV_vec[k] <- sum( (y_vec-mean_vec) * weight_vec )/sum(weight_vec,na.rm=TRUE)
  #   CNV_SD_vec[k] <- sqrt(1/sum(weight_vec))
+    }
      
     
     #========= skip exon first line
@@ -184,9 +203,13 @@ patCNV.compute.CNV.single <- function( session_info, sample_name,
      }
   
     #========= computing CNV 
-    CNV_vec[k] <- sum( (y_vec-mean_vec) )/N_bins
-
-     
+    if((!is.na(knownSex)) && knownSex == "MALE" && k %in% haploidExons) {
+    # both somatic and germline samples are uncorrected... so the effect cancels out
+      CNV_vec[k] <- sum( (y_vec-mean_vec) * weight_vec )/sum(weight_vec,na.rm=TRUE)
+    } else {
+     CNV_vec[k] <- sum( (y_vec-mean_vec) )/N_bins
+    }
+ 
     
     #========= skip exon first line
     v <- readLines(case_wcon,1)
@@ -205,7 +228,7 @@ patCNV.compute.CNV.single <- function( session_info, sample_name,
   
   return(
 	list(CNV=CNV_vec,sample.ID=sample_ID,sample.name=sample_name)
-		)
+	)
   
 }
 

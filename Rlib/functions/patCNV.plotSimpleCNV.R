@@ -18,12 +18,18 @@ patCNV.plotSimpleCNV <- function( chr.vec, pos.vec, cnv.vec,
   ordered.chr.vec <- cnv.color.idx[order.idx]
   
   if(is.null(ylim)){ ylim <- range(ordered.cnv.vec) }
+  outliersLess<-which(cnv.vec< ylim[1])
+  outliersMore<-which(cnv.vec> ylim[2])
   
+
   plot(ordered.cnv.vec, 
        col = chr.color[ordered.chr.vec], ylim = ylim, ylab = ylab,
        cex = cnv.cex, ...)
   abline(h = 0, lty = 2, lwd = 2, col = "black")
-  
+  points(seq(1,length(ordered.cnv.vec))[outliersLess],rep(ylim[1],length(outliersLess)),col = "blue", pch=6)
+  points(seq(1,length(ordered.cnv.vec))[outliersMore],rep(ylim[2],length(outliersMore)),col = "red", pch=2)
+
+
   for(chr.idx in 1 : 24){
     tmp.chr.Set.idx <- which(ordered.chr.vec == chr.idx )
     tail.pos <- tail(tmp.chr.Set.idx, 1)

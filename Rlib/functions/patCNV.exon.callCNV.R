@@ -2,7 +2,7 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
                                   CNV.type = c("Germline", "Somatic"),
                                   txt.output.DIR = NULL, plot.output.DIR = NULL, 
                                   feature.name.sep = " ",
-                                  small.delta = 1e-2, SNR.dB.cut = 10, N.SNR.quantiles = 20)
+                                  small.delta = 1e-2, SNR.dB.cut = 10, N.SNR.quantiles = 20,predicted.sex=NULL,known.sex=NULL)
   # output pval.mtx, CNV.mtx
   # output exon_count_mtx, exon_RPKM_mtx
   # return(list(total_count_vec=total_count_vec,
@@ -11,6 +11,9 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
 
   N.sample <- length(covg.info$total_count_vec)
   N.feature <- nrow(covg.info$exon_RPKM_mtx)
+
+  diploidExons<-which((session.info$exon_info$Chr!="chrX" & session.info$exon_info$Chr!="chrY"  ) | session.info$exon_info$PAR==1)
+  haploidXExons<-which((session.info$exon_info$Chr=="chrX" ) & session.info$exon_info$PAR==0)
 
   if(is.null(txt.output.DIR)){
     txt.output.DIR <- session.info$DIR_info$txt_output_DIR
@@ -41,6 +44,10 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
       log2(covg.info$exon_RPKM_mtx[,k] + small.delta) -
       log2(pattern.list$median.RPKM + small.delta)
 
+#      print(paste("Sample ",sampleID.vec[k], ", meanX=",mean(covg.info$exon_RPKM_mtx[haploidXExons,k]),
+#      ", mean X model=",mean(pattern.list$median.RPKM[haploidXExons]),
+#      "mean diploid model=", mean(pattern.list$median.RPKM[diploidExons]),", mean diploid sample=",mean(covg.info$exon_RPKM_mtx[diploidExons,k]),"\n"))
+
     CNV.mtx[ , k] <- individual.CNV.vec
 
     individual.sample.ID <- sampleID.vec[k]
@@ -50,11 +57,15 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
         width = 3e3, height = 1.5e3, res = 250)
 
     SNR.GEthreshold.idx <- which(pattern.list$SNR.dB >= SNR.dB.cut)
+
+    sexString<-getSexTitleString(predicted.sex,known.sex,k)
+
     patCNV.plotSimpleCNV(chr.vec = session.info$exon_info$Chr[SNR.GEthreshold.idx],
                          pos.vec = session.info$exon_info$Start[SNR.GEthreshold.idx],
                          cnv.vec = individual.CNV.vec[SNR.GEthreshold.idx],
-                         main = paste("CNV plot of", individual.sample.ID),
+                         main = paste("CNV plot of", individual.sample.ID,"\n",sexString),
                          ylim = c(-3, 3))
+
     dev.off()
 
 
@@ -131,3 +142,5 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
   }
 
 }
+
+

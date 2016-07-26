@@ -36,13 +36,32 @@ if(germline_count >= 3 & !anyDuplicated(germline_samples)){
 	adj.germline.covg.res <- patCNV.adjust.GCbias(session.info=somatic.sessionInfo, covg.info=germline.covg.res, output.prefix="Germline")
 
 	print("#=== step 2(d) pattern training and SNR summary")
-	exon.pattern.res <- patCNV.learnExonPattern(session.info=somatic.sessionInfo, covg.info=adj.germline.covg.res, sample.QC.list=germline.QC.res)
+	exon.pattern.res <- patCNV.learnExonPattern(session.info=somatic.sessionInfo, covg.info=adj.germline.covg.res, sample.QC.list=germline.QC.res,check.gender=TRUE)
+	guessedMales<- attr(exon.pattern.res,"guessedMales")
+	predicted.sex<-attr(exon.pattern.res,"sex.predicted")
+	known.sex<-attr(exon.pattern.res,"sex.known")
+
+	if(somatic.sessionInfo$learn.Xratio==TRUE) {
+             somatic.sessionInfo$X.FemalevsMale.ratio<-as.numeric(attr(exon.pattern.res,"X.FemalevsMale.ratio"))
+	     print(paste("somatic.sessionInfo$X.FemalevsMale.ratio=",somatic.sessionInfo$X.FemalevsMale.ratio,"\n",sep=""))
+	     adj.germline.covg.res<-patCNV.adjustXChrom(session.info=somatic.sessionInfo, covg.info=adj.germline.covg.res) 
+        }
+	if(length(attr(exon.pattern.res,"guessedMales"))>0) {
+	   print(paste("Adjusting ",length(attr(exon.pattern.res,"guessedMales"))," guessed Males with X.FemalevsMale.ratio=",attr(exon.pattern.res,"X.FemalevsMale.ratio"),"\n",sep=""))
+	   adj.germline.covg.res.Xcorrected<-patCNV.adjustGuessedMale(session.info=somatic.sessionInfo,covg.info=adj.germline.covg.res,guessedMales=attr(exon.pattern.res,"GuessedMales"))
+	} else {
+	   adj.germline.covg.res.Xcorrected<- adj.germline.covg.res
+	}
 
 	print("#=== step 2(e) exon-level CNV calling; generate table and matrix summary")
-	germline.exonCNV.res <- patCNV.exon.callCNV(session.info=somatic.sessionInfo, covg.info=adj.germline.covg.res, pattern.list=exon.pattern.res, CNV.type="Germline")
+	germline.exonCNV.res <- patCNV.exon.callCNV(session.info=somatic.sessionInfo, covg.info=adj.germline.covg.res.Xcorrected, 
+			     pattern.list=exon.pattern.res, CNV.type="Germline",predicted.sex=predicted.sex,known.sex=known.sex)
+
 
 	print("#=== step 2(f) exon-level CNV segmentation; generate txt and pdf results per sample")
 	patCNV.exon.segmentCNV(session.info=somatic.sessionInfo, CNV.mtx=germline.exonCNV.res$CNV.mtx, pattern.list=exon.pattern.res)
+
+
 
 	print("#=== step 3(a) somatic coverage")
 	somatic.covg.res <- patCNV.scan.covg.multi(session_info=somatic.sessionInfo, sample.type='Somatic')
@@ -50,11 +69,39 @@ if(germline_count >= 3 & !anyDuplicated(germline_samples)){
 	print("#=== step 3(b) somatic GC-coverage bias correction")
 	adj.somatic.covg.res <- patCNV.adjust.GCbias(session.info=somatic.sessionInfo, covg.info=somatic.covg.res, output.prefix="Somatic")
 
+	if(somatic.sessionInfo$learn.Xratio==TRUE) {
+# readjust X chromosome coverage for known males after learning the ratio.. Do not recommend this.
+	     adj.somatic.covg.res<-patCNV.adjustXChrom(session.info=somatic.sessionInfo, covg.info=adj.somatic.covg.res) 
+        }
+
+	print("#=== step 3(c) somatic sex-Check")
+	sexcheck<-patCNV.Somatic.SexCheck(session.info=somatic.sessionInfo, covg.info=adj.somatic.covg.res)
+	somatic.guessedMales<- attr(sexcheck,"guessedMales")
+	somatic.predicted.sex<-attr(sexcheck,"sex.predicted")
+	somatic.known.sex<-attr(sexcheck,"sex.known")
+
+	if(length(somatic.guessedMales)>0) {
+	   print("Adjusting somatic X&Y counts for guessed males\n")
+	   adj.somatic.covg.res.Xcorrected<-patCNV.adjustGuessedMale(session.info=somatic.sessionInfo,covg.info=adj.somatic.covg.res,guessedMales=somatic.guessedMales)
+	} else {
+	   adj.somatic.covg.res.Xcorrected<-adj.somatic.covg.res
+        }
+	attr(adj.somatic.covg.res.Xcorrected,"guessedMales")<-somatic.guessedMales
+
+
 	print("#=== step 3(c) somatic exonCNV calling; text and figure results")
-	somatic.CNV.res <- patCNV.exon.callCNV(session.info=somatic.sessionInfo, covg.info=adj.somatic.covg.res, pattern.list=exon.pattern.res, CNV.type = "Somatic")
+	somatic.CNV.res <- patCNV.exon.callCNV(session.info=somatic.sessionInfo, covg.info=adj.somatic.covg.res.Xcorrected, pattern.list=exon.pattern.res, CNV.type = "Somatic",
+			           predicted.sex=somatic.predicted.sex,known.sex=somatic.known.sex)
 
 	print("#=== step 3(d) somatic exonCNV segmentation; text and figure results")
 	patCNV.exon.segmentCNV(session.info=somatic.sessionInfo, CNV.mtx=somatic.CNV.res$CNV.mtx, pattern.list=exon.pattern.res)
+
+
+        print("#=== step 3(e) somatic coverage QC")	 
+	somatic.QC.res <- patCNV.sample.QC(session.info=somatic.sessionInfo, covg.info=adj.somatic.covg.res.Xcorrected, output.prefix="Somatic") 
+
+
+
 
 }else{
 	print("You need at least 3 unique Germline samples to run this version of PatternCNV. Running the old version now which performs somatic calling in a pair-wise fashion...")

@@ -1,0 +1,5 @@
+sample.name	subject.ID	sample.type	batch.ID	BAM.file
+LS1946_blood	LS1946	Germline	1	/data2/bsi/RandD/s112423.DNA-SV/Exome_CNV/follicular_lymphoma_samples/Cerhan_James_cerhan/exome/alignment/alignment/LS1946_blood/LS1946_blood.sorted.bam
+LS1946_tissue	LS1946	Somatic	1	/data2/bsi/RandD/s112423.DNA-SV/Exome_CNV/follicular_lymphoma_samples/Cerhan_James_cerhan/exome/alignment/alignment/LS1946_tissue/LS1946_tissue.sorted.bam
+LS2398_blood	LS2398	Germline	1	/data2/bsi/RandD/s112423.DNA-SV/Exome_CNV/follicular_lymphoma_samples/Cerhan_James_cerhan/exome/alignment/alignment/LS2398_blood/LS2398_blood.sorted.bam
+LS2398_tissue	LS2398	Somatic	1	/data2/bsi/RandD/s112423.DNA-SV/Exome_CNV/follicular_lymphoma_samples/Cerhan_James_cerhan/exome/alignment/alignment/LS2398_tissue/LS2398_tissue.sorted.bam

@@ -33,24 +33,28 @@ patCNV.adjust.GCbias <- function(session.info, covg.info,
   LR.sdelta <- small.delta
   log2RPKM.mtx <- log2(covg.info$exon_RPKM_mtx + LR.sdelta)
   log2.median.vec <- apply(log2RPKM.mtx, 1, median, na.rm = TRUE)
-  train.exon.idx <- which(log2.median.vec >= GC.train.min.log2RPKM)
-  
+  train.exon.idx <- which((log2.median.vec >= GC.train.min.log2RPKM) & ((session.info$exon_info$Chr!="chrX" & session.info$exon_info$Chr!="chrY") | session.info$exon_info$PAR==1))
+  print(paste("training GC exons=",length(train.exon.idx),"\n",sep=""))
   crct.log2RPKM.mtx <- log2RPKM.mtx
   for(k in 1:N.sample){
-    tmp.GC <- GC.vec[train.exon.idx]
-    tmp.Cvg <- log2RPKM.mtx[train.exon.idx,k]
-    tmp.median <- median(tmp.Cvg)
+    tmp.GC.train <- GC.vec[train.exon.idx]
+    tmp.Cvg.train <- log2RPKM.mtx[train.exon.idx,k]
+    tmp.median.train <- median(tmp.Cvg.train)
     
-    sspline.res <- smooth.spline( tmp.GC, tmp.Cvg, df = sspline.df)
+    sspline.res <- smooth.spline( tmp.GC.train, tmp.Cvg.train, df = sspline.df)
     
     GC.slope.vec[k] <- 
       diff(predict( sspline.res, GC.slope.range )$y) / diff(GC.slope.range)
     
     tmp.GC.cvg.range <- (range(predict( sspline.res, seq(GC.slope.range[1], GC.slope.range[2], length.out = 100) )$y))
     GC.maxmin.Difflog2R.vec[k] <- tmp.GC.cvg.range[2] - tmp.GC.cvg.range[1]
-    
+
+    tmp.GC <- GC.vec
+    tmp.Cvg <- log2RPKM.mtx[,k]
+
     GC.predict.Cvg <- predict(sspline.res, tmp.GC)$y
-    crct.log2RPKM.mtx[ train.exon.idx, k ] <- ( tmp.Cvg / GC.predict.Cvg ) * tmp.median
+    crct.log2RPKM.mtx[, k ] <- ( tmp.Cvg / GC.predict.Cvg ) * tmp.median.train
+    print(paste(sampleID.vec[k]," baseline shift= ",mean(crct.log2RPKM.mtx[train.exon.idx, k ]-tmp.Cvg.train),", slope=",GC.slope.vec[k],sep=""))
   }
   
   crct.RPKM.mtx <- 2^crct.log2RPKM.mtx
@@ -70,7 +74,8 @@ patCNV.adjust.GCbias <- function(session.info, covg.info,
     plot(smooth.spline( GC.vec[train.exon.idx], 
                         log2(covg.info$exon_RPKM_mtx[train.exon.idx,j]+LR.sdelta),
                         df = sspline.df),
-         col = j, lwd = 2, ylim = GC.splinePlot.ylim, type = "l", xlab = "", ylab = "", 
+#         col = "black", lwd = 2, ylim = GC.splinePlot.ylim, type = "l", xlab = "", ylab = "", 
+         col = "black", lwd = 2, type = "l", xlab = "", ylab = "", 
          main=paste("",
                     colnames(covg.info$exon_RPKM_mtx)[j],"\n",
                     "\n GC slope =", round(GC.slope.vec[j],digits = 2)

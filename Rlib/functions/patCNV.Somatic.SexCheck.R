@@ -1,32 +1,24 @@
-patCNV.learnExonPattern <- function( session.info, covg.info,
+patCNV.Somatic.SexCheck <- function( session.info, covg.info,
                                      sample.QC.list,
-                                     check.gender = TRUE, sex.minimum.RPKM = 0.1,
-                                     small.delta = 1e-2,
-				     text.output.DIR = 'cnv-txt')
+                                     sex.minimum.RPKM = 0.1,
+				     text.output.DIR = 'cnv-txt') {
+# New Module to perform sex QC.
+# The difficulty is that if the sex was given as MALE, the counts were multiplied by 2.0 (X.FemalevsMale.ratio)
 
-{
-# Changes:
-#     12/09/2015 : Hugues Sicotte
-#                  -Changed the meaning of signal-to-noise (was too low by 1.48)
-#                  -Added SEX QC file
-#                  -X-rescaling and Sex-check now ignore PAR1 and PAR2 regions.
-#                  -User can specify BED file with known CNV in training sample, to ignore during training.
-# 		   -remove outliers during X chromosome rescaling and sex check.
-#                  -sex now required to be specified by user.
-#     7/06/2016
-#                  - disabled check.gender (it's always true)
-#                  - synchronized code between learExonPattern and Somatic.SexCheck
-#
-  sample.outlier.idx <- match( rownames(sample.QC.list)[which(sample.QC.list$is.outlier == 1)],colnames(covg.info$exon_RPKM_mtx) )
-  sample.NOToutlier.idx<- which(! (colnames(covg.info$exon_RPKM_mtx) %in% rownames(sample.QC.list)[which(sample.QC.list$is.outlier == 1)]))
+  sample.outlier.idx<-c()
+  sample.NOToutlier.idx<-seq(1,length(colnames(covg.info$exon_RPKM_mtx)))
 
+  patCNV.install.DIR <- getwd()
 
 #  source("patCNV.SexCheck.INCLUDE.R")
-# Cannnot actually use "source" because the sourcing is delayed .. if
-
+#  source does not behave like "include", delayed execution makes it a problem.
+#######################
+#######################
+#######################
 ################################################################################################################################
 ####BEGIN of DO NOT CHANGE CODE HERE, change in patCNV.SexCheck.INCLUDE.R file.. and paste back                         ############################
 ################################################################################################################################
+
 
 
 # Include this file in patCNV.Somatic.SexCheck.R  and patCNV.learnExonPattern.R
@@ -35,8 +27,8 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
   wasAbleToSexCheck<-FALSE
   trueSex<-rep(NA,length(colnames(covg.info$exon_RPKM_mtx)))
 
-  male.sample.idx<-c()
-  female.sample.idx<-c()
+  male.sample.idx<-NULL
+  female.sample.idx<-NULL
 
   diploid.subset<-which((session.info$exon_info$Chr!="chrX" & session.info$exon_info$Chr!="chrY"  ) | session.info$exon_info$PAR==1)
   haploid.subset<-which((session.info$exon_info$Chr=="chrX" | session.info$exon_info$Chr=="chrY"  ) & session.info$exon_info$PAR==0)
@@ -85,7 +77,7 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
   median.vec <- apply((exon_RPKM_mtx.masked[,sample.NOToutlier.idx] ), 1, median,na.rm=T)
   MAD.vec <- apply((exon_RPKM_mtx.masked[,sample.NOToutlier.idx] ), 1, mad,na.rm=T)
 
-# undo male correction,(doubling) so can perform sex check and better learn Sex Ratio
+# undo male correction, so can perform sex check and better learn Sex Ratio
    if(length(male.sample.idx)>0){
       exon_RPKM_mtx.masked[haploid.subset,male.sample.idx]<- 0.5*exon_RPKM_mtx.masked[haploid.subset,male.sample.idx]
       exon_count_mtx.masked[haploid.subset,male.sample.idx]<- 0.5*exon_count_mtx.masked[haploid.subset,male.sample.idx]
@@ -301,9 +293,20 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
       guessedMales<-which(sex.predicted=="MALE" & ! (is.known.female.vec | is.known.male.vec))
    }
 
+#######################
+#######################
+#######################
 ################################################################################################################################
 ####END of DO NOT CHANGE CODE HERE, change in INCLUDE file.. and paste back                         ############################
 ################################################################################################################################
+
+
+
+
+
+
+
+
 
 
   sample.sex.QC=data.frame(sample=colnames(covg.info$exon_RPKM_mtx),sex.supplied=trueSex,
@@ -318,106 +321,15 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
  rownames(sample.sex.QC)<-NULL
 
 # Write out sex QC table
-  write.table(x = as.data.frame(sample.sex.QC),file = paste(text.output.DIR, "/Germline_sex_QC_table.txt",sep = ""), quote = FALSE, sep = "\t", row.names = FALSE)
+  write.table(x = as.data.frame(sample.sex.QC),file = paste(text.output.DIR, "/Somatic_sex_QC_table.txt",sep = ""), 
+    quote = FALSE, sep = "\t", row.names = FALSE)
 
 
 
 
-
-# Compute the sex-adjusted Pattern.
-
-  male.index<-sort(c(male.sample.idx,guessedMales))
-  guessedFemales<-c()
-  if(wasAbleToSexCheck){
-     guessedFemales<-which(sex.predicted=="FEMALE" & ! (is.known.female.vec | is.known.male.vec))
-  }
-
-  female.index<-sort(c(female.sample.idx,guessedFemales))
-
-# Rescale X chromosome (not in PAR region) counts for males.
-# At least some probes that can be corrected.
-
-  if(length(sex.chrX.idx)>0) {
-     chrX.RPKM.mtx.masked <- as.matrix(exon_RPKM_mtx.masked[sex.chrX.idx,])
-     if(length(male.index)>0 && !is.null(male.index) && length(notPAR.X.subset)>0){
-# Now multiple males by 2
-	          chrX.RPKM.mtx.masked[notPAR.X.subset,male.index] <-  2*chrX.RPKM.mtx.masked[notPAR.X.subset,male.index]
-     }
-# Compute median for X&Y  probes
-     chrX.median.vec<-NULL
-     chrX.MAD.vec<-NULL
-
-     if(length(female.index)>0) {
-        chrX.median.vec <- apply( (chrX.RPKM.mtx.masked[,female.index] ), 1, median,na.rm=T)
-        chrX.MAD.vec <- apply( (chrX.RPKM.mtx.masked[,female.index] ), 1, mad,na.rm=T)
-     } else {
-        if(length(male.index)>0) {
-           chrX.median.vec <- apply( (chrX.RPKM.mtx.masked[,male.index] ), 1, median,na.rm=T)
-           chrX.MAD.vec <- apply( (chrX.RPKM.mtx.masked[,male.index] ), 1, mad,na.rm=T)
-        }
-     }
-# Overwrite the X&Y chromosome count with the adjusted valued.
-#
-     if(!is.null(chrX.median.vec)) {
-         median.vec[sex.chrX.idx] <- chrX.median.vec
-         MAD.vec[sex.chrX.idx] <- chrX.MAD.vec
-     }
-   }
-
-    if(length(sex.chrY.idx)>0) {
-       chrY.RPKM.mtx.masked <- as.matrix(exon_RPKM_mtx.masked[sex.chrY.idx,])
-       chrY.median.vec <- NULL
-       chrY.MAD.vec <- NULL	   
-       if(length(male.index)>0 && !is.null(male.index) && length(notPAR.Y.subset)>0){
-           chrY.median.vec <- apply(  chrY.RPKM.mtx.masked[,male.index] , 1, median,na.rm=T)
-      	   chrY.MAD.vec <- apply(  chrY.RPKM.mtx.masked[,male.index] , 1, mad,na.rm=T )
-       }
-
-# Overwrite the X&Y chromosome count with the adjusted valued.
-#
-       if(!is.null(chrY.median.vec)){
-          median.vec[sex.chrY.idx] <- chrY.median.vec
-          MAD.vec[sex.chrY.idx] <- chrY.MAD.vec
-       }
-    }
-
-
-
-# Rescale back by gender or guessed gender.
-  if(length(notPAR.X.subset)>0){
-          exon_count_mtx.masked[sex.chrX.idx[notPAR.X.subset],male.index]<- X.FemalevsMale.ratio * exon_count_mtx.masked[sex.chrX.idx[notPAR.X.subset],male.index]
-  }
-  if(length(notPAR.Y.subset)>0){
-          exon_count_mtx.masked[sex.chrY.idx[notPAR.Y.subset],male.index]<-2*exon_count_mtx.masked[sex.chrY.idx[notPAR.Y.subset],male.index]
-  }
-
-
-
-
-#
-# HS: on 12/08/2015 removed Extra 1.4825   SNR.ratio.vec <- (median.vec) / (1.4826 * (MAD.vec) + small.delta )
-#
-  SNR.ratio.vec <- (median.vec) / (MAD.vec + small.delta )
-  if(length(which(is.na(SNR.ratio.vec)))>0){	# fill SNR == NA with min.SNR 
-	  min.SNR.ratio.val <- min(SNR.ratio.vec, na.rm=TRUE)
-	  SNR.ratio.vec[which(is.na(SNR.ratio.vec))] <- min.SNR.ratio.val
-  }
-
-  SNR.dB.vec <- 20 * log10( SNR.ratio.vec )
-
-  mean.count.vec <- apply(exon_count_mtx.masked,1,mean, na.rm=TRUE)
-
-  patternMtx <- cbind( median.RPKM = median.vec,
-                       MAD.RPKM = MAD.vec,
-                       mean.raw.BPcount = mean.count.vec,
-                       SNR.ratio = SNR.ratio.vec,
-                       SNR.dB = SNR.dB.vec)
-
-  patternMtxFrame<- as.data.frame(patternMtx)
-  attr(patternMtxFrame,"X.FemalevsMale.ratio")<-X.FemalevsMale.ratio
-  attr(patternMtxFrame,"guessedMales")<-guessedMales
-  attr(patternMtxFrame,"sex.predicted")<-sex.predicted
-  attr(patternMtxFrame,"sex.known")<-trueSex
-
-  return(patternMtxFrame)
+  retObj<-list()
+  attr(retObj,"guessedMales")<-guessedMales
+  attr(retObj,"sex.predicted")<-sex.predicted
+  attr(retObj,"sex.known")<-trueSex
+  return(retObj)
 }

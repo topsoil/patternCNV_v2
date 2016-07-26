@@ -21,7 +21,7 @@ patCNV.scan.covg.single <- function(wig_filename,sample_ID,exon_bin_vec,is_captu
   }
   
   exon_start_vec <- exon_header_vec + 1
-  exon_end_vec <- c(exon_header_vec[2:N_exons]-1,length(r_int)) # orginal
+  exon_end_vec <- c(exon_header_vec[2:N_exons]-1,length(r_int)) # original
   
     
   exon_vec <- mat.or.vec(N_exons,1)

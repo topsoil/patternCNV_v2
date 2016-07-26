@@ -149,19 +149,19 @@ then
 	job_suffix=".${job_name_suffix}"
 fi
 
-# create exon key
-qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_exonkey $previous_jobids -N $job_name.exon_key.allsamples${job_suffix} $patterncnv_path/src/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $additional_params"
-EXONKEY=$($qsub_command)
-echo -e "\n# PatternCNV ExonKey Job Submission for all samples\n${qsub_command}"
-echo -e "${EXONKEY}\n"
-jobid_exonkey=$(echo $EXONKEY | cut -d ' ' -f3)
+## create exon key
+#qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_exonkey $previous_jobids -N $job_name.exon_key.allsamples${job_suffix} $patterncnv_path/src/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $additional_params"
+#EXONKEY=$($qsub_command)
+#echo -e "\n# PatternCNV ExonKey Job Submission for all samples\n${qsub_command}"
+#echo -e "${EXONKEY}\n"
+#jobid_exonkey=$(echo $EXONKEY | cut -d ' ' -f3)
 
 # bam2wig for each unique sample
 jobid_bam2wig=""
-for sample in $(cut -f1 $sample_info | sed 1d | sort | uniq)
+for sample in $(awk '{ if ($3=="Somatic") {print $1} }' $sample_info | sort | uniq)
 do
 	bam=$(grep -P "^${sample}\t" $sample_info | head -1 | cut -f5)
-	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_exonkey -N $job_name.bam2wig.${sample}${job_suffix} $patterncnv_path/src/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $additional_params"
+	qsub_command="qsub -wd $logs_dir -q $queue -m a $previous_jobids -M $email $memory_bam2wig -N $job_name.bam2wig.${sample}${job_suffix} $patterncnv_path/src/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $additional_params"
 	BAM2WIG=$($qsub_command)
 	echo -e "# PatternCNV BAM2WIG Job Submission for sample ${sample}\n${qsub_command}"
 	echo -e "${BAM2WIG}\n"
@@ -178,6 +178,7 @@ echo -e "${CALLCNVS}\n"
 
 echo "End PatternCNV Wrapper"
 echo $(date)
+
 
 
 
