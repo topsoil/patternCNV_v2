@@ -14,13 +14,9 @@ patCNV.sample.QC <- function(session.info, covg.info,
   if(is.null(plot.output.DIR)){
     plot.output.DIR <- session.info$DIR_info$plot_output_DIR
   }  
-  # Limit QC to non-sex exons (allow PAR region to be QC'ed, since it's diploid)
-  nonSexExons<-which((session.info$exon_info$Chr!="chrX" & session.info$exon_info$Chr!="chrY") | session.info$exon_info$PAR==1)
-
-  sample.cormtx <- cor(covg.info$exon_RPKM_mtx[nonSexExons,])
   
-  #sample.cormtx[! is.finite(sample.cormtx)] <- 0
-
+  
+  sample.cormtx <- cor(covg.info$exon_RPKM_mtx)
   sample.median.corval <- apply(sample.cormtx,1,median, na.rm = TRUE)
   
   outlier.sampleSet <- names(which(sample.median.corval < outlier.min.median.corval))
@@ -38,7 +34,6 @@ patCNV.sample.QC <- function(session.info, covg.info,
   
   sample.QC.mtx <- cbind(median.corval = mch.median.corval, is.outlier, 
                          total.million.BP.cvg = round(covg.info$total_count_vec/1e6,digits = 1))
-
   rownames(sample.QC.mtx) <- sampleID.vec
   
   
@@ -50,7 +45,7 @@ patCNV.sample.QC <- function(session.info, covg.info,
   pdf(paste(plot.output.DIR, output.prefix, "_QC_plot.pdf",sep = ""))
   
   
-  heatmap.2(sample.cormtx,trace="none",col=bluered(25), 
+  hm <- heatmap.2(sample.cormtx,trace="none",col=bluered(25), 
             cexRow = heatmap.text.cex, cexCol = heatmap.text.cex,
             labRow = sampleID.vec, 
             labCol = sampleID.vec, 
@@ -71,11 +66,9 @@ patCNV.sample.QC <- function(session.info, covg.info,
   
   
   plot( density(log2(covg.info$exon_RPKM_mtx[,1]+0.1), bw = rpkm.density.bw),
-#        xlim=c(-5, 12),xlab="log2(RPKM)", 
-        xlim=c(1, 12),xlab="log2(RPKM)", 
+        xlim=c(-5, 12),xlab="log2(RPKM)", 
         main=paste("log2(RPKM) densities of",N.sample,"samples"), 
-#        col="white", ylim=c(0,0.39), lwd = 2 )
-        col="white", lwd = 2 )
+        col="white", ylim=c(0,0.39), lwd = 2 )
   for(j in 1:N.sample){
     tmp.density <- density(log2(covg.info$exon_RPKM_mtx[,j]+0.1), 
                            bw = rpkm.density.bw)
@@ -89,30 +82,24 @@ patCNV.sample.QC <- function(session.info, covg.info,
     lines( approx.x, approx.density(approx.x),
            col = rainbow(N.sample)[j], lwd = 1.5, pch = j, type = "p")
   }
-  legend("topleft", sampleID.vec, col = rainbow(N.sample), 
+  legend("topright", sampleID.vec, col = rainbow(N.sample), 
          lwd = 1, pch = 1 : N.sample, cex = 0.6)  
   
-  approx.density.mtx.t <- t(approx.density.mtx)
-  
-  if( ! all( approx.density.mtx.t[1,1] == approx.density.mtx.t) ){
-	cat("patternCNV warning: Values in log2(RPKM) density matrix are identical\n")
-	heatmap.2(as.matrix(t(approx.density.mtx)), main = "heatmap of log2(RPKM) densities",
-			  trace="none", Colv = FALSE, col = bluered(25),
-              cexCol = 0.7, cexRow = 0.7)
-  }
+  heatmap.2(t(approx.density.mtx), main = "heatmap of log2(RPKM) densities",
+            trace="none", Colv = FALSE, col = bluered(25), 
+            cexCol = 0.7, cexRow = 0.7)
   
   dev.off()
   
   write.table(x = as.data.frame(sample.QC.mtx),
               file = paste(plot.output.DIR, output.prefix, "_QC_table.txt",sep = ""), 
               quote = FALSE, sep = "\t", row.names = TRUE)
-  
-  return(as.data.frame(sample.QC.mtx))
-  
+
   
   rownames(sample.cormtx) <- colnames(sample.cormtx) <- sampleID.vec
-  write.table(x = as.data.frame(sample.cormtx),
-              file = paste(plot.output.DIR, output.prefix, "_cor_matrix.txt",sep = ""), 
+  write.table(sample.cormtx[rev(hm$rowInd), hm$colInd],
+              file = paste(plot.output.DIR, output.prefix, "_heatmap_cor_matrix.txt",sep = ""),
               quote = FALSE, sep = "\t", row.names = TRUE)
 
+  return(as.data.frame(sample.QC.mtx))
 }
