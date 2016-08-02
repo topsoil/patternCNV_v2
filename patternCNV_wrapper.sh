@@ -21,12 +21,14 @@ OPTIONS:
 -m      20              Minimum mapping quality of reads to use for coverage calculation. Default: 20
 -z      1000            Size of exons that should be split into multiple exons. Default: 1000
 -x      100             Extension buffer size defining size each exon should be extended on both sides. Default: 100
+-s                      Run patternCNV in serial mode, not submitting any jobs to an sge cluster. Default: Parallel mode
 -n                      Don't merge overlapping exons. Default: Merge
 -v                      Verbose logs for debugging
 -j                      Optional comma separated list of job IDs for PatternCNV to wait on (qsub -hold_jid).
 -w                      Optional prefix to use in job names (qsub -N)
 -u                      Optional suffix to use in job names (qsub -N)
 -l                      Optional path to logs folder if user doesn't want to use the default location
+-i                      Incremental mode, does not generate wigs or exon_key if they exist.
 -d			Debug mode. Keeps exon bed and bam2wig intermediate files.
 -h                      print out this help message
 "
@@ -36,20 +38,24 @@ exit 1;
 # default parameters if not changed by user
 bin_size=10
 min_mapping_qual=20
+serial="NO"
 merge_overlaps="YES"
 split_size=1000
 extension_buffer=100
+incremental="NO"
 
-while getopts "c:b:m:x:z:nvdj:w:u:l:h" opt; do
+while getopts "c:b:m:x:z:snvdij:w:u:l:h" opt; do
 	case $opt in
 		c) config=$OPTARG;;
 		b) bin_size=$OPTARG;;
 		m) min_mapping_qual=$OPTARG;;
 		x) extension_buffer=$OPTARG;;
+                s) serial="YES";;
 		n) merge_overlaps="NO";;
 		z) split_size=$OPTARG;;
 		v) verbose="YES";;
 		d) debug="YES";;
+                i) incremental="YES";;
 		j) jobs_to_hold_for=$OPTARG;;
 		w) job_name_prefix=$OPTARG;;
 		u) job_name_suffix=$OPTARG;;
@@ -150,31 +156,59 @@ then
 fi
 
 # create exon key
-qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_exonkey $previous_jobids -N $job_name.exon_key.allsamples${job_suffix} $patterncnv_path/src/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $additional_params"
-EXONKEY=$($qsub_command)
-echo -e "\n# PatternCNV ExonKey Job Submission for all samples\n${qsub_command}"
-echo -e "${EXONKEY}\n"
-jobid_exonkey=$(echo $EXONKEY | cut -d ' ' -f3)
+pcnv_command="$patterncnv_path/src/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $additional_params"
+if [[ "$incremental" = "NO" || ( "$incremental" = "YES" && ! -f "$exon_key" ) ]] ; then 
+
+    if [ "$serial" == "YES" ]
+    then
+        $pcnv_command
+        echo -e "\n# PatternCNV ExonKey Job for all samples\n${pcnv_command}\n"
+    else 
+	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_exonkey $previous_jobids -N $job_name.exon_key.allsamples${job_suffix} $pcnv_command"
+	EXONKEY=$($qsub_command)
+	echo -e "\n# PatternCNV ExonKey Job Submission for all samples\n${qsub_command}"
+	echo -e "${EXONKEY}\n"
+	jobid_exonkey=$(echo $EXONKEY | cut -d ' ' -f3)
+    fi
+fi
 
 # bam2wig for each unique sample
 jobid_bam2wig=""
 for sample in $(cut -f1 $sample_info | sed 1d | sort | uniq)
 do
 	bam=$(grep -P "^${sample}\t" $sample_info | head -1 | cut -f5)
-	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_exonkey -N $job_name.bam2wig.${sample}${job_suffix} $patterncnv_path/src/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $additional_params"
-	BAM2WIG=$($qsub_command)
-	echo -e "# PatternCNV BAM2WIG Job Submission for sample ${sample}\n${qsub_command}"
-	echo -e "${BAM2WIG}\n"
-	jobid=$(echo $BAM2WIG | cut -d ' ' -f3)
-	jobid_bam2wig="${jobid},${jobid_bam2wig}"
+	bamfile=$(basename $bam)
+	wigfile="$output_dir/wigs/${bamfile}.coverage.wig.gz"
+	if  [[ "$incremental" = "NO" || ( "$incremental" = "YES" && ! -f "$wigfile" ) ]] ; then
+	    pcnv_command="$patterncnv_path/src/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $additional_params"
+	    if [ "$serial" == "YES" ]
+            then
+                $pcnv_command
+                echo -e "# PatternCNV BAM2WIG Job for sample ${sample}\n${pcnv_command}\n"
+	    else
+		qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_exonkey -N $job_name.bam2wig.${sample}${job_suffix} $pcnv_command"
+		BAM2WIG=$($qsub_command)
+		echo -e "# PatternCNV BAM2WIG Job Submission for sample ${sample}\n${qsub_command}"
+		echo -e "${BAM2WIG}\n"
+		jobid=$(echo $BAM2WIG | cut -d ' ' -f3)
+		jobid_bam2wig="${jobid},${jobid_bam2wig}"
+	    fi
+	fi
 done
 
 
 # call CNVs
-qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig -N $job_name.call_cnvs.allsamples${job_suffix} $patterncnv_path/src/call_cnvs.sh -c $config -v"
-echo -e "# PatternCNV CallCNVs Job Submission for all samples\n${qsub_command}"
-CALLCNVS=$($qsub_command)
-echo -e "${CALLCNVS}\n"
+pcnv_command="$patterncnv_path/src/call_cnvs.sh -c $config -v"
+if [ "$serial" == "YES" ]
+then
+    $pcnv_command
+    echo -e "# PatternCNV CallCNVs Job for all samples\n${pcnv_command}\n"
+else
+    qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+    echo -e "# PatternCNV CallCNVs Job Submission for all samples\n${qsub_command}"
+    CALLCNVS=$($qsub_command)
+    echo -e "${CALLCNVS}\n"
+fi
 
 echo "End PatternCNV Wrapper"
 echo $(date)
