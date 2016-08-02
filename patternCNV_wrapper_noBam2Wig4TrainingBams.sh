@@ -211,7 +211,11 @@ then
     $pcnv_command
     echo -e "# PatternCNV CallCNVs Job for all samples\n${pcnv_command}\n"
 else
-    qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+    if [[ ${#jobid_bam2wig} -gt 0 ]] ; then
+	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+    else
+	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+    fi
     echo -e "# PatternCNV CallCNVs Job Submission for all samples\n${qsub_command}"
     CALLCNVS=$($qsub_command)
     echo -e "${CALLCNVS}\n"
