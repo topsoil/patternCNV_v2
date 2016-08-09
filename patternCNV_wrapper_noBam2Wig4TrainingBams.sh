@@ -159,6 +159,7 @@ fi
 
 # No exon key generation for this versionc
 if [[ 1 == 0 ]] ; then
+hold_jobid_exonkey=""
 pcnv_command="$patterncnv_path/src/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $additional_params"
 if [[ "$incremental" = "NO" || ( "$incremental" = "YES" && ! -f "$exon_key" ) ]] ; then 
 
@@ -172,6 +173,7 @@ if [[ "$incremental" = "NO" || ( "$incremental" = "YES" && ! -f "$exon_key" ) ]]
 	echo -e "\n# PatternCNV ExonKey Job Submission for all samples\n${qsub_command}"
 	echo -e "${EXONKEY}\n"
 	jobid_exonkey=$(echo $EXONKEY | cut -d ' ' -f3)
+	hold_jobid_exonkey="-hold_jid $jobid_exonkey "
     fi
 fi
 fi
@@ -192,7 +194,7 @@ do
                 $pcnv_command
                 echo -e "# PatternCNV BAM2WIG Job for sample ${sample}\n${pcnv_command}\n"
 	    else
-		qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_exonkey -N $job_name.bam2wig.${sample}${job_suffix} $pcnv_command"
+		qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig $hold_jobid_exonkey  -N $job_name.bam2wig.${sample}${job_suffix} $pcnv_command"
 		BAM2WIG=$($qsub_command)
 		echo -e "# PatternCNV BAM2WIG Job Submission for sample ${sample}\n${qsub_command}"
 		echo -e "${BAM2WIG}\n"
