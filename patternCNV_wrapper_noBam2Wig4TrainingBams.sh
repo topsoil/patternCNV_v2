@@ -213,7 +213,7 @@ then
 else
     if [[ ${#jobid_bam2wig} -gt 0 ]] ; then
 	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
-    else
+    else 
 	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
     fi
     echo -e "# PatternCNV CallCNVs Job Submission for all samples\n${qsub_command}"

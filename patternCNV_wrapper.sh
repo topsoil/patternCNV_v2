@@ -156,9 +156,10 @@ then
 fi
 
 # create exon key
+echo "Checking if need to create exon key file $exon_key"
 pcnv_command="$patterncnv_path/src/bam2wig/exon_key.sh -e $exon_bed -c $capture_bed -o $exon_key -b $bin_size -t $config -x $extension_buffer -s $split_size $additional_params"
+hold_exonkey=""
 if [[ "$incremental" = "NO" || ( "$incremental" = "YES" && ! -f "$exon_key" ) ]] ; then 
-
     if [ "$serial" == "YES" ]
     then
         $pcnv_command
@@ -169,27 +170,31 @@ if [[ "$incremental" = "NO" || ( "$incremental" = "YES" && ! -f "$exon_key" ) ]]
 	echo -e "\n# PatternCNV ExonKey Job Submission for all samples\n${qsub_command}"
 	echo -e "${EXONKEY}\n"
 	jobid_exonkey=$(echo $EXONKEY | cut -d ' ' -f3)
+	hold_exonkey="-hold_jid $jobid_exonkey"
     fi
 fi
 
 # bam2wig for each unique sample
 jobid_bam2wig=""
+
 for sample in $(cut -f1 $sample_info | sed 1d | sort | uniq)
 do
 	bam=$(grep -P "^${sample}\t" $sample_info | head -1 | cut -f5)
 	bamfile=$(basename $bam)
 	wigfile="$output_dir/wigs/${bamfile}.coverage.wig.gz"
+	echo "Testing if need to generate $wigfile"
 	if  [[ "$incremental" = "NO" || ( "$incremental" = "YES" && ! -f "$wigfile" ) ]] ; then
 	    pcnv_command="$patterncnv_path/src/bam2wig/bam2wig.sh -i $bam -o $output_dir/wigs -b $bin_size -m $min_mapping_qual -t $config -e $exon_key $additional_params"
 	    if [ "$serial" == "YES" ]
             then
-                $pcnv_command
                 echo -e "# PatternCNV BAM2WIG Job for sample ${sample}\n${pcnv_command}\n"
+                $pcnv_command
 	    else
-		qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_exonkey -N $job_name.bam2wig.${sample}${job_suffix} $pcnv_command"
+		qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig $hold_exonkey -N $job_name.bam2wig.${sample}${job_suffix} $pcnv_command"
 		BAM2WIG=$($qsub_command)
 		echo -e "# PatternCNV BAM2WIG Job Submission for sample ${sample}\n${qsub_command}"
 		echo -e "${BAM2WIG}\n"
+
 		jobid=$(echo $BAM2WIG | cut -d ' ' -f3)
 		jobid_bam2wig="${jobid},${jobid_bam2wig}"
 	    fi
@@ -198,16 +203,16 @@ done
 
 
 # call CNVs
-pcnv_command="$patterncnv_path/src/call_cnvs.sh -c $config -v"
+pcnv_command="${patterncnv_path}/src/call_cnvs.sh -c $config -v"
 if [ "$serial" == "YES" ]
 then
     $pcnv_command
     echo -e "# PatternCNV CallCNVs Job for all samples\n${pcnv_command}\n"
 else
     if [[ ${#jobid_bam2wig} -gt 0 ]] ; then
-	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
-    else
-	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs $hold_bam2wig  -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+    else 
+	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs  -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
     fi
     echo -e "# PatternCNV CallCNVs Job Submission for all samples\n${qsub_command}"
     CALLCNVS=$($qsub_command)

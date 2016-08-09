@@ -1,4 +1,5 @@
-.libPaths("Rlib")
+currdir<-getwd()
+.libPaths(paste(currdir,"/","Rlib",sep=""))
 source("http://bioconductor.org/biocLite.R")
 biocLite("DNAcopy")
 install.packages(pkgs="fdrtool",repos='http://cran.us.r-project.org')
