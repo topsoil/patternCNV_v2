@@ -138,20 +138,17 @@ then
 fi
 
 previous_jobids=""
-if [ "$jobs_to_hold_for" ]
-then
+if [[ ${#jobs_to_hold_for} -gt 0 ]] ; then
 	previous_jobids="-hold_jid $jobs_to_hold_for"
 fi
 
 job_name="PATTERNCNV"
-if [ "$job_name_prefix" ]
-then
+if [[ ${#job_name_prefix} -gt 0 ]] ; then
 	job_name="${job_name_prefix}.PATTERNCNV"
 fi
 
 job_suffix=""
-if [ "$job_name_suffix" ]
-then
+if [[ ${$job_name_suffix} -gt 0 ]] ; then
 	job_suffix=".${job_name_suffix}"
 fi
 
@@ -210,9 +207,9 @@ then
     echo -e "# PatternCNV CallCNVs Job for all samples\n${pcnv_command}\n"
 else
     if [[ ${#jobid_bam2wig} -gt 0 ]] ; then
-	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs $hold_bam2wig  -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig   $hold_exonkey -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
     else 
-	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs  -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs                            $hold_exonkey -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
     fi
     echo -e "# PatternCNV CallCNVs Job Submission for all samples\n${qsub_command}"
     CALLCNVS=$($qsub_command)
