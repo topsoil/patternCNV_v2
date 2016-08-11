@@ -148,7 +148,7 @@ if [[ ${#job_name_prefix} -gt 0 ]] ; then
 fi
 
 job_suffix=""
-if [[ ${$job_name_suffix} -gt 0 ]] ; then
+if [[ ${#job_name_suffix} -gt 0 ]] ; then
 	job_suffix=".${job_name_suffix}"
 fi
 
