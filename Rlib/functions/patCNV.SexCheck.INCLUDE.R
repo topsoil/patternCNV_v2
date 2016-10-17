@@ -1,8 +1,17 @@
-# Include this file in patCNV.Somatic.SexCheck.R  and patCNV.learnExonPattern.R
+
+
+
+
+ sampleID.vec <- colnames(covg.info$exon_RPKM_mtx)
+#  colnames.vec<-make.names(session.info$file_info$ID,unique=T)
+#  sampleids<-session.info$file_info$ID[match(sampleID.vec,colnames.vec)]
+
+
+  sample.NOToutlier.idx<- which(! (sampleID.vec %in% rownames(sample.QC.list)[which(sample.QC.list$is.outlier == 1)]))
+  NSamples<-length(sampleID.vec) 
   X.FemalevsMale.ratio<-as.numeric(session.info$X.FemalevsMale.ratio)
 
   wasAbleToSexCheck<-FALSE
-  trueSex<-rep(NA,length(colnames(covg.info$exon_RPKM_mtx)))
 
   male.sample.idx<-c()
   female.sample.idx<-c()
@@ -10,33 +19,32 @@
   diploid.subset<-which((session.info$exon_info$Chr!="chrX" & session.info$exon_info$Chr!="chrY"  ) | session.info$exon_info$PAR==1)
   haploid.subset<-which((session.info$exon_info$Chr=="chrX" | session.info$exon_info$Chr=="chrY"  ) & session.info$exon_info$PAR==0)
 
+  is.known.female.vec<-rep(FALSE,NSamples)
+  is.known.male.vec<-rep(FALSE,NSamples)
+  trueSex<-rep("NA",NSamples)
+
   if("sex" %in% colnames(session.info$file_info)){
-      trueSex<-as.character(session.info$file_info$sex[match(colnames(covg.info$exon_RPKM_mtx),session.info$file_info$ID)])
-      is.known.male.vec<- trueSex=="MALE"
-      male.sample.idx<-which(is.known.male.vec)
-      is.known.female.vec<- trueSex=="FEMALE"
-      female.sample.idx<-which(is.known.female.vec)
-  } else {
-      is.known.female.vec<-rep(FALSE,length(colnames(covg.info$exon_RPKM_mtx)))
-      is.known.male.vec<-rep(FALSE,length(colnames(covg.info$exon_RPKM_mtx)))
+  # The count data is in the same order as the file_info ..
+      trueSex<-as.character(session.info$file_info$sex[match(sampleID.vec,session.info$file_info$ID)])
+      male.sample.idx<-which(as.character(trueSex)=="MALE")
+      is.known.male.vec[male.sample.idx]<-TRUE
+      female.sample.idx<-which(as.character(trueSex)=="FEMALE")
+      is.known.female.vec[female.sample.idx]<-TRUE
   }
+
   female.NOToutlier.idx<-female.sample.idx[which(female.sample.idx %in% sample.NOToutlier.idx)]
   male.NOToutlier.idx<-male.sample.idx[which(male.sample.idx %in% sample.NOToutlier.idx)]
 
 
-
-
-
 # Set to NA known CNV on specific samples, to get 'cleaner' pattern
-# Make sure Germline samples are in the same order.
+# This exon_info_mask should cover both Somatic and Germline samples 
   OKflag.raw<-session.info$exon_info_mask
-  samples.include<-which(colnames(OKflag.raw) %in% colnames(covg.info$exon_RPKM_mtx))
-  sample.order<-match(colnames(OKflag.raw),colnames(covg.info$exon_RPKM_mtx))
-  OKflag<-OKflag.raw[,sample.order[samples.include],drop=FALSE]
-  if(ncol(OKflag)!=ncol(covg.info$exon_RPKM_mtx)){
-      print("BUG: exon columns do not match exon_info_mask\nDIAGNOSTIC INFO FOLLOWS\n----------------------------------\n")
+  samples.include<-which(sampleID.vec %in% colnames(OKflag.raw))
+  OKflag<-OKflag.raw[,samples.include,drop=FALSE]
+  if(length(samples.include)!=length(sampleID.vec)) {
+      print("BUG: exon columns are not a subset of exon_info_mask\nDIAGNOSTIC INFO FOLLOWS\n----------------------------------\n")
       print(paste("colnames for OKflag",colnames(OKflag.raw),sep="\n"))
-      print(paste("colnames for exon_RPKM_mtx",colnames(covg.info$exon_RPKM_mtx),sep="\n"))
+      print(paste("colnames for exon_RPKM_mtx",sampleID.vec,sep="\n"))
       print(paste("dim(OKflag)=",dim(OKflag),"\n------------------------------------",sep=""))
       exit(-1)
   }
@@ -51,10 +59,10 @@
     exon_count_mtx.masked<-covg.info$exon_count_mtx
   }
 
-  median.vec <- apply((exon_RPKM_mtx.masked[,sample.NOToutlier.idx] ), 1, median,na.rm=T)
-  MAD.vec <- apply((exon_RPKM_mtx.masked[,sample.NOToutlier.idx] ), 1, mad,na.rm=T)
+  median.vec <- apply((exon_RPKM_mtx.masked[,sample.NOToutlier.idx,drop=F] ), 1, median,na.rm=T)
+  MAD.vec <- apply((exon_RPKM_mtx.masked[,sample.NOToutlier.idx,drop=F] ), 1, mad,na.rm=T)
 
-# undo male correction, so can perform sex check and better learn Sex Ratio
+# undo male correction,(doubling) so can perform sex check and better learn Sex Ratio
    if(length(male.sample.idx)>0){
       exon_RPKM_mtx.masked[haploid.subset,male.sample.idx]<- 0.5*exon_RPKM_mtx.masked[haploid.subset,male.sample.idx]
       exon_count_mtx.masked[haploid.subset,male.sample.idx]<- 0.5*exon_count_mtx.masked[haploid.subset,male.sample.idx]
@@ -73,31 +81,31 @@
 
 
 # Even if there are no probes with data.. once check.gender check is requested, must output a report.. so precompute empty QC values.
-     print("Running Sex Check\n")
-     sex.predicted<-rep("NA",length(colnames(covg.info$exon_RPKM_mtx)))
+
+     sex.predicted<-rep("NA",NSamples)
 
      notPAR.X.subset<-which(session.info$exon_info$PAR[sex.chrX.idx]==0)
 
      cat(paste("Number of haploid X probes =",length(notPAR.X.subset),"\n"))
 
 
-     n.Xprobes<-rep(length(notPAR.X.subset),length(colnames(covg.info$exon_RPKM_mtx)))
-     n.Xprobes.OKcov<-rep(0,length(colnames(covg.info$exon_RPKM_mtx)))
+     n.Xprobes<-rep(length(notPAR.X.subset),NSamples)
+     n.Xprobes.OKcov<-rep(0,NSamples)
      notPAR.Y.subset <- which(session.info$exon_info$PAR[sex.chrY.idx]==0 )
-     n.Yprobes<-rep(length(notPAR.Y.subset),length(colnames(covg.info$exon_RPKM_mtx)))
-     n.Yprobes.OKcov<-rep(0,length(colnames(covg.info$exon_RPKM_mtx)))
+     n.Yprobes<-rep(length(notPAR.Y.subset),NSamples)
+     n.Yprobes.OKcov<-rep(0,NSamples)
 
 # Load preliminary coverage .. it may be null.
 
-     sample.diploid.meanCvg <- apply((exon_RPKM_mtx.masked[diploid.subset,]), 2, mean,na.rm=T)
+     sample.diploid.meanCvg <- apply(exon_RPKM_mtx.masked[diploid.subset,,drop=F], 2, mean,na.rm=T)
 
      if(length(notPAR.Y.subset)>0){
-             sample.chrY.meanCvg <- apply((exon_RPKM_mtx.masked[sex.chrY.idx[notPAR.Y.subset],]), 2, mean,na.rm=T)
+             sample.chrY.meanCvg <- apply(exon_RPKM_mtx.masked[sex.chrY.idx[notPAR.Y.subset],,drop=F], 2, mean,na.rm=T)
      } else {
              sample.chrY.meanCvg<-rep(NA,ncol(exon_RPKM_mtx.masked))
      }
      if(length(notPAR.X.subset)>0){
-             sample.chrX.meanCvg <- apply((exon_RPKM_mtx.masked[sex.chrX.idx[notPAR.X.subset],]), 2, mean,na.rm=T)
+             sample.chrX.meanCvg <- apply(exon_RPKM_mtx.masked[sex.chrX.idx[notPAR.X.subset],,drop=F], 2, mean,na.rm=T)
      } else {
              sample.chrX.meanCvg<-rep(NA,ncol(exon_RPKM_mtx.masked))
      }
@@ -113,13 +121,13 @@
 # Enough probes to Do Sex Check & (optionally) learn X scaling factor for males.
         if(length(notPAR.X.subset)>0){
             # vector of probe means
-             sample.chrX.meanCvg <- apply(  (exon_RPKM_mtx.masked[sex.chrX.idx[notPAR.X.subset],]), 2, mean,na.rm=T)
+             sample.chrX.meanCvg <- apply(exon_RPKM_mtx.masked[sex.chrX.idx[notPAR.X.subset],,drop=F], 2, mean,na.rm=T)
              if(length(female.NOToutlier.idx)>0) {
-                 OK.X.notPar.probes<-which(apply( exon_RPKM_mtx.masked[sex.chrX.idx[notPAR.X.subset],female.NOToutlier.idx], 1, mean,na.rm=T)>=sex.minimum.RPKM)
+                 OK.X.notPar.probes<-which(apply(exon_RPKM_mtx.masked[sex.chrX.idx[notPAR.X.subset],female.NOToutlier.idx,drop=F], 1, mean,na.rm=T)>=sex.minimum.RPKM)
              } else {
 #         use the sex-corrected scaled data for X.
                  if(length(sample.NOToutlier.idx)>0) {
-                     OK.X.notPar.probes<-which(apply(covg.info$exon_RPKM_mtx[sex.chrX.idx[notPAR.X.subset],sample.NOToutlier.idx], 1, mean,na.rm=T)>=sex.minimum.RPKM)
+                     OK.X.notPar.probes<-which(apply(covg.info$exon_RPKM_mtx[sex.chrX.idx[notPAR.X.subset],sample.NOToutlier.idx,drop=F], 1, mean,na.rm=T)>=sex.minimum.RPKM)
                  } else {
                    OK.X.notPar.probes<-c()
                  }
@@ -127,11 +135,11 @@
           }
           if(length(notPAR.Y.subset)>0){
              if(length(male.NOToutlier.idx)>0) {
-                  OK.Y.notPar.probes <- which(apply( exon_RPKM_mtx.masked[sex.chrY.idx[notPAR.Y.subset],male.NOToutlier.idx], 1, mean,na.rm=T)>=sex.minimum.RPKM)
+                  OK.Y.notPar.probes <- which(apply( exon_RPKM_mtx.masked[sex.chrY.idx[notPAR.Y.subset],male.NOToutlier.idx,drop=F], 1, mean,na.rm=T)>=sex.minimum.RPKM)
              } else {
              # We do not know who is male, so we will underestimate Y counts.
                   if(length(sample.NOToutlier.idx)>0) {
-                     OK.Y.notPar.probes<-which(apply( exon_RPKM_mtx.masked[sex.chrY.idx[notPAR.Y.subset],sample.NOToutlier.idx], 1, mean,na.rm=T)>=sex.minimum.RPKM)
+                     OK.Y.notPar.probes<-which(apply( exon_RPKM_mtx.masked[sex.chrY.idx[notPAR.Y.subset],sample.NOToutlier.idx,drop=F], 1, mean,na.rm=T)>=sex.minimum.RPKM)
                   } else {
                      OK.Y.notPar.probes<-c()
                   }
@@ -144,16 +152,16 @@
           sample.Yoverdiploid.ratio <- NA
           if(length(notPAR.X.subset)>0 && length(OK.X.notPar.probes)>0){
 	        reliable.sex.chrX.idx <-  sex.chrX.idx[notPAR.X.subset[OK.X.notPar.probes]]
-	        n.Xprobes.OKcov<-rep(length(reliable.sex.chrX.idx),length((colnames(covg.info$exon_RPKM_mtx))))
+	        n.Xprobes.OKcov<-rep(length(reliable.sex.chrX.idx),NSamples)
 	    # Per Sample mean coverage, eliminating NA .. also evaluate sex for outliers.
-	        sample.chrX.meanCvg <- apply(  (exon_RPKM_mtx.masked[reliable.sex.chrX.idx,]), 2, mean,na.rm=T)
+	        sample.chrX.meanCvg <- apply(exon_RPKM_mtx.masked[reliable.sex.chrX.idx,,drop=F], 2, mean,na.rm=T)
 	        sample.Xoverdiploid.ratio <- (sample.chrX.meanCvg/sample.diploid.meanCvg)
           }
           if(length(notPAR.Y.subset)>0 && length(OK.Y.notPar.probes)>0){
 	        reliable.sex.chrY.idx <-  sex.chrY.idx[notPAR.Y.subset[OK.Y.notPar.probes]]
-	        n.Yprobes.OKcov<-rep(length(reliable.sex.chrY.idx),length((colnames(covg.info$exon_RPKM_mtx))))
+	        n.Yprobes.OKcov<-rep(length(reliable.sex.chrY.idx),NSamples)
 	    # Per Sample mean coverage, eliminating NA .. also evaluate sex for outliers.
-	        sample.chrY.meanCvg <- apply(  (exon_RPKM_mtx.masked[reliable.sex.chrY.idx,]), 2, mean,na.rm=T)
+	        sample.chrY.meanCvg <- apply(exon_RPKM_mtx.masked[reliable.sex.chrY.idx,,drop=F], 2, mean,na.rm=T)
 	        sample.Yoverdiploid.ratio <- (sample.chrY.meanCvg/sample.diploid.meanCvg)
           }
 
@@ -208,6 +216,7 @@
 	      	   X.FemalevsMale.ratio<-mean(sample.chrX.meanCvg[OKfemale.sample.idx])/mean(sample.chrX.meanCvg[OKmale.sample.idx])
 	        }
 		wasAbleToSexCheck<-TRUE
+		 print("wasAbleToSexCheck with X&Y probes\n")
              } # End of Enough probes to perform Gender Check and (optionally) learn Correction
        } # End of Enough probes to perform Gender Check and (optionally) learn Correction
        
@@ -241,6 +250,7 @@
 	        if(session.info$learn.Xratio==TRUE && length(OKmale.sample.idx)>0){
 	      	   X.FemalevsMale.ratio<-mean(sample.diploid.meanCvg)/mean(sample.chrX.meanCvg[OKmale.sample.idx])
 	        }
+		 print("wasAbleToSexCheck with X probes only\n")
 		wasAbleToSexCheck<-TRUE
 
         }
@@ -262,11 +272,13 @@
 	        OKfemale.sample.idx<-which(sex.predicted=="FEMALE" & trueSex=="FEMALE")
 
 #          (optionally) learn Male vs Female ratio for X.. Should be 2.0, but could vary 
+		 print("wasAbleToSexCheck with Y probes only\n")
 		wasAbleToSexCheck<-TRUE
         }
 
-   guessedMales<-c()
    if(wasAbleToSexCheck){
-      guessedMales<-which(sex.predicted=="MALE" & ! (is.known.female.vec | is.known.male.vec))
-   }
+      guessedMales<-which(as.character(sex.predicted)=="MALE" &  (!(is.known.female.vec | is.known.male.vec)))
+   } else {
+      guessedMales<-c()
+    }
 

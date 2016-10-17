@@ -77,8 +77,7 @@ patCNV.export.CNV.tables <- function(session_info, covg_info, FDR_res,
 		}
 
     
-    write.table(x=out.mtx,file=tmp_output_file,
-                quote=FALSE,sep='\t',row.names=FALSE)
+    write.table(x=out.mtx,file=tmp_output_file, quote=FALSE,sep='\t',row.names=FALSE)
   }
   
 }

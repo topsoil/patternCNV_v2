@@ -12,6 +12,7 @@ patCNV.adjustGuessedMale<-function(session.info, covg.info,guessedMales)  {
 #
 
    if(length(guessedMales)>0) {
+      print(paste("adjusting Males  for samples:",paste(colnames(covg.info$exon_RPKM_mtx)[guessedMales],collapse=","),sep=""))
       covg.info$exon_RPKM_mtx[haploid.subset,guessedMales]<-  2*covg.info$exon_RPKM_mtx[haploid.subset,guessedMales]
       covg.info$exon_count_mtx[haploid.subset,guessedMales]<- 2*covg.info$exon_count_mtx[haploid.subset,guessedMales]
   }

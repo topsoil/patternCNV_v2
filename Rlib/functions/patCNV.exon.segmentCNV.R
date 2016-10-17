@@ -8,6 +8,13 @@ patCNV.exon.segmentCNV <- function( session.info, CNV.mtx, pattern.list,
 {
   
   require(DNAcopy)
+
+  sampleID.vec <- colnames(CNV.mtx)
+#  print(paste("patCNV.exon.segmentCNV:CNV.mtx somatic colnames=",paste(sampleID.vec,collapse=","),sep=""))
+#  print(paste("patCNV.exon.segmentCNV:file_info$ID=",paste(session.info$file_info$ID,collapse=","),sep=""))
+#  colnames.vec<-make.names(session.info$file_info$ID,unique=T)
+#  sampleids<-as.character(session.info$file_info$ID[match(sampleID.vec,session.info$file_info$ID)])
+
   
   N.sample <- ncol(CNV.mtx)
   N.feature <- nrow(CNV.mtx)
@@ -20,7 +27,6 @@ patCNV.exon.segmentCNV <- function( session.info, CNV.mtx, pattern.list,
     plot.output.DIR <- session.info$DIR_info$plot_output_DIR
   }  
   
-  sampleID.vec <- colnames(CNV.mtx)
   
   output_suffix <- "_CNV_seg_"
   sel_idx <-  which(pattern.list$SNR.dB >= SNR.dB.cut)
@@ -28,22 +34,22 @@ patCNV.exon.segmentCNV <- function( session.info, CNV.mtx, pattern.list,
   chrom <- session.info$exon_info$Chr[sel_idx]
   maploc <- session.info$exon_info$Start[sel_idx]
   maploc.end <- session.info$exon_info$Stop[sel_idx]
-  
+#  print(paste("patCNV.exon.segmentCNV:sampleID.vec=",paste(sampleID.vec,collapse=","),sep=""))
   for(smpl_idx in 1 : N.sample)
   {
     
-    sel_sample_ID <- sampleID.vec[smpl_idx]
+    sel_sample_name <- sampleID.vec[smpl_idx]
     
-    cat("processing", smpl_idx, "-th sample:", sel_sample_ID, "\n")
+    cat("processing", smpl_idx, "-th sample:", sel_sample_name, "\n")
     
     
     tmp_output_bed_file <- 
-      paste(txt.output.DIR, sel_sample_ID, output_suffix,'.bed',sep='')
+      paste(txt.output.DIR, sel_sample_name, output_suffix,'.bed',sep='')
     tmp_output_txt_file <- 
-      paste(txt.output.DIR, sel_sample_ID, output_suffix,'.txt',sep='')
+      paste(txt.output.DIR, sel_sample_name, output_suffix,'.txt',sep='')
     
     cna.res_My <- CNA(CNV.mtx[sel_idx, smpl_idx], chrom, maploc,
-                      data.type=c("logratio"), sampleid=sel_sample_ID)
+                      data.type=c("logratio"), sampleid=sel_sample_name)
     seg.res_My <- segment(cna.res_My, verbose=0, ...)
     
     seg_mtx <- seg.res_My$output
@@ -62,7 +68,7 @@ patCNV.exon.segmentCNV <- function( session.info, CNV.mtx, pattern.list,
     {
       
       CNV_seg_pdf_filename <- 
-        paste(plot.output.DIR, sel_sample_ID,output_suffix,'.pdf',sep='')
+        paste(plot.output.DIR, sel_sample_name,output_suffix,'.pdf',sep='')
       pdf(CNV_seg_pdf_filename)
       plot(seg.res_My, ylim=plot.ylim, cex=plot.cex)
       plot(seg.res_My, ylim=plot.ylim,

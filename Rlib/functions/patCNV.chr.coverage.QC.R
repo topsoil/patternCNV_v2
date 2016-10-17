@@ -1,9 +1,13 @@
-patCNV.chr.coverage.QC <- function(  session_info,covg_info,legend.layout="topright",plot.cex=2,legend.cex=1)
+patCNV.chr.coverage.QC <- function(session_info,covg_info,legend.layout="topright",plot.cex=2,legend.cex=1)
   
   
 {
    N_sample <- length(covg_info$total_count_vec)
    chr.rpkm.mtx <- mat.or.vec(22,N_sample)
+
+   sampleID.vec <- colnames(covg_info$exon_RPKM_mtx)
+#   colnames.vec<-make.names(session_info$file_info$ID,unique=T)
+   sampleids<-session_info$file_info$ID[match(sampleID.vec,session_info$file_info$ID)]
 
    for(k in 1:22)
    {
@@ -27,7 +31,7 @@ patCNV.chr.coverage.QC <- function(  session_info,covg_info,legend.layout="topri
 
 	  if(legend.layout!='none') 
 	  {
-		legend(x=legend.layout,colnames(covg_info$exon_RPKM_mtx),
+		legend(x=legend.layout,sampleids,
 	       	cex=legend.cex,col=samplecolor_vec,pch=seq(1,N_sample),lty=1,lwd=1)
 	  }
  

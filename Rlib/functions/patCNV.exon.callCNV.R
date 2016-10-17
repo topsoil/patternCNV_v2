@@ -9,6 +9,12 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
   #          exon_count_mtx=exon_count_mtx,exon_RPKM_mtx=exon_RPKM_mtx))
 {
 
+
+ sampleID.vec <- colnames(covg.info$exon_RPKM_mtx)
+#  colnames.vec<-make.names(session.info$file_info$ID,unique=T)
+  sampleids<-session.info$file_info$ID[match(sampleID.vec,session.info$file_info$ID)]
+
+
   N.sample <- length(covg.info$total_count_vec)
   N.feature <- nrow(covg.info$exon_RPKM_mtx)
 
@@ -24,7 +30,7 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
   }
 
 
-  sampleID.vec <- colnames(covg.info$exon_RPKM_mtx)
+
   featureID.vec <- paste(      session.info$exon_info$Chr,
                                session.info$exon_info$Start,
                                session.info$exon_info$Genes,
@@ -32,7 +38,8 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
 
   CNV.mtx <- mat.or.vec(N.feature, N.sample)
   pval.mtx <- mat.or.vec(N.feature, N.sample) + 1
-  colnames(CNV.mtx) <- colnames(pval.mtx) <- sampleID.vec
+#  colnames(CNV.mtx) <- colnames(pval.mtx) <- sampleID.vec
+  colnames(CNV.mtx) <- colnames(pval.mtx) <- sampleids
   rownames(CNV.mtx) <- rownames(pval.mtx) <- featureID.vec
 
   exon.raw.count.mtx <- covg.info$exon_count_mtx
@@ -50,7 +57,7 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
 
     CNV.mtx[ , k] <- individual.CNV.vec
 
-    individual.sample.ID <- sampleID.vec[k]
+    individual.sample.ID <- sampleids[k]
     cat("processing", k, "-th sample:", individual.sample.ID, "\n")
 
     png(paste(plot.output.DIR, individual.sample.ID, "_CNV.png", sep = ""),

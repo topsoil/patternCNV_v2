@@ -52,8 +52,7 @@ patCNV.export.simple.tables <- function(session_info, covg_info, cnv_res,
                              'is.captured')
     
     
-    write.table(x=out.mtx,file=tmp_output_file,
-                quote=FALSE,sep='\t',row.names=FALSE)
+    write.table(x=out.mtx,file=tmp_output_file, quote=FALSE,sep='\t',row.names=FALSE)
   }
   
 }

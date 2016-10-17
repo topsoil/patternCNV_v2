@@ -12,7 +12,8 @@ patCNV.adjust.GCbias <- function(session.info, covg.info,
   
   N.sample <- length(covg.info$total_count_vec)
   sampleID.vec <- colnames(covg.info$exon_RPKM_mtx)
-  
+#  colnames.vec<-make.names(session.info$file_info$ID,unique=T)
+  sampleids<-session.info$file_info$ID[match(sampleID.vec,session.info$file_info$ID)]
   
   if(is.null(txt.output.DIR)){
     txt.output.DIR <- session.info$DIR_info$txt_output_DIR
@@ -54,7 +55,7 @@ patCNV.adjust.GCbias <- function(session.info, covg.info,
 
     GC.predict.Cvg <- predict(sspline.res, tmp.GC)$y
     crct.log2RPKM.mtx[, k ] <- ( tmp.Cvg / GC.predict.Cvg ) * tmp.median.train
-    print(paste(sampleID.vec[k]," baseline shift= ",mean(crct.log2RPKM.mtx[train.exon.idx, k ]-tmp.Cvg.train),", slope=",GC.slope.vec[k],sep=""))
+    print(paste(sampleids[k]," baseline shift= ",mean(crct.log2RPKM.mtx[train.exon.idx, k ]-tmp.Cvg.train),", slope=",GC.slope.vec[k],sep=""))
   }
   
   crct.RPKM.mtx <- 2^crct.log2RPKM.mtx
@@ -77,7 +78,7 @@ patCNV.adjust.GCbias <- function(session.info, covg.info,
 #         col = "black", lwd = 2, ylim = GC.splinePlot.ylim, type = "l", xlab = "", ylab = "", 
          col = "black", lwd = 2, type = "l", xlab = "", ylab = "", 
          main=paste("",
-                    colnames(covg.info$exon_RPKM_mtx)[j],"\n",
+                    sampleids[j],"\n",
                     "\n GC slope =", round(GC.slope.vec[j],digits = 2)
          ))
     
@@ -89,7 +90,7 @@ patCNV.adjust.GCbias <- function(session.info, covg.info,
                    log2(covg.info$exon_RPKM_mtx[train.exon.idx,j]+LR.sdelta), 
                    xlab="GC content", ylab="log2(RPKM)",
                    main=paste("",
-                              colnames(covg.info$exon_RPKM_mtx)[j],"\n",
+                              sampleids[j],"\n",
                               "\n GC slope =", round(GC.slope.vec[j],digits = 2) ) )
     lines(smooth.spline( GC.vec[train.exon.idx], 
                          log2(covg.info$exon_RPKM_mtx[train.exon.idx,j]+LR.sdelta),df = sspline.df),

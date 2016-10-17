@@ -54,13 +54,11 @@ patCNV.segment.CNV <- function( session_info, cnv_res,
     #bed_mtx <- cbind(as.character(seg_mtx$chrom),seg_mtx$loc.start,seg_mtx$loc.end,seg_mtx$seg.mean)
     bed_mtx <- cbind(as.character(seg_mtx$chrom),seg_mtx$loc.start,
                      maploc.end[seg.res_My$segRows$endRow],seg_mtx$seg.mean) # end of segment is modified according to end of exon
-    write.table(x=bed_mtx,file=tmp_output_bed_file,quote=FALSE,
-                row.names=FALSE,col.names=FALSE,sep='\t')
+    write.table(x=bed_mtx,file=tmp_output_bed_file,quote=FALSE,row.names=FALSE,col.names=FALSE,sep='\t')
     
     txt_mtx <- cbind(as.character(seg_mtx$chrom),seg_mtx$loc.start,
                      maploc.end[seg.res_My$segRows$endRow],seg_mtx$seg.mean,seg_mtx$num.mark) # end of segment is modified according to end of exon
-    write.table(x=txt_mtx,file=tmp_output_txt_file,quote=FALSE,
-                row.names=FALSE,col.names=FALSE,sep='\t')
+    write.table(x=txt_mtx,file=tmp_output_txt_file,quote=FALSE, row.names=FALSE,col.names=FALSE,sep='\t')
     #the only difference between .bed and .txt files is "seg_mtx$num.mark"
     
     if (is.plot)

@@ -3,6 +3,10 @@ patCNV.coverage.QC <- function(  session_info,covg_info,sel_genes,legend.layout=
   
 {
   
+ sampleID.vec <- colnames(covg_info$exon_RPKM_mtx)
+#  colnames.vec<-make.names(session_info$file_info$ID,unique=T)
+  sampleids<-session_info$file_info$ID[match(sampleID.vec,session_info$file_info$ID)]
+
    sel.exon.idx <- 
 	which(is.element(session_info$exon_info$Genes,sel_genes)) 
 	
@@ -32,7 +36,7 @@ patCNV.coverage.QC <- function(  session_info,covg_info,sel_genes,legend.layout=
 	grid()
   if(legend.layout!='none') 
   {
-    legend(x=legend.layout,colnames(covg_info$exon_RPKM_mtx),
+    legend(x=legend.layout,sampleids,
            cex=legend.cex,col=samplecolor_vec,pch=seq(1,N_sample)%%26,lty=1,lwd=1)  
   }
 	

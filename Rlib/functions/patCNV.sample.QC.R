@@ -6,6 +6,8 @@ patCNV.sample.QC <- function(session.info, covg.info,
 {
   N.sample <- length(covg.info$total_count_vec)
   sampleID.vec <- colnames(covg.info$exon_RPKM_mtx)
+#  colnames.vec<-make.names(session.info$file_info$ID,unique=T)
+#  sampleids<-session.info$file_info$ID[match(sampleID.vec,session.info$file_info$ID)]
   
   if(is.null(txt.output.DIR)){
     txt.output.DIR <- session.info$DIR_info$txt_output_DIR
@@ -40,6 +42,7 @@ patCNV.sample.QC <- function(session.info, covg.info,
                          total.million.BP.cvg = round(covg.info$total_count_vec/1e6,digits = 1))
 
   rownames(sample.QC.mtx) <- sampleID.vec
+
   
   
   approx.x <- seq(-5, 12, 0.5)
@@ -108,6 +111,7 @@ patCNV.sample.QC <- function(session.info, covg.info,
               quote = FALSE, sep = "\t", row.names = TRUE)
  
   rownames(sample.cormtx) <- colnames(sample.cormtx) <- sampleID.vec
+
   write.table(x = as.data.frame(sample.cormtx),
               file = paste(plot.output.DIR, output.prefix, "_cor_matrix.txt",sep = ""),
               quote = FALSE, sep = "\t", row.names = TRUE) 
