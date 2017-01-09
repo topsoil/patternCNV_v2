@@ -29,8 +29,11 @@ patCNV.load.Rlib <- function( lib_name, lib_type=c('CRAN','Bioconductor') )
 	if(!lib_flag)
 	  {
 	    	cat(paste('\n library ',lib_name,' cannot be located. installing...\n',sep=''))
-		install.packages(pkgs=lib_name)	
-	 	stop(paste('\n please re-run the code\n',sep=''))
+		install.packages(pkgs=lib_name,repos="http://cran.us.r-project.org")	
+		lib_flag <- library(package=lib_name,logical.return=TRUE,character.only=TRUE)
+	 	if(!lib_flag) {
+			      stop(paste('\n please re-run the code\n',sep=''))
+		}
 	    
 	  }
 	} 
@@ -40,10 +43,13 @@ patCNV.load.Rlib <- function( lib_name, lib_type=c('CRAN','Bioconductor') )
 	lib_flag <- library(package=lib_name,logical.return=TRUE,character.only=TRUE)
 	if(!lib_flag)
 	  {
-		stop(paste('\n library ',lib_name,' cannot be located. installing...\n',sep=''))
+	    cat(paste('\n library ',lib_name,' cannot be located. installing...\n',sep=''))
 	    source("http://bioconductor.org/biocLite.R")
-	    biocLite(pkgs=lib_name)	
-	    cat(paste('\n please re-run the code\n',sep=''))
+	    biocLite(pkgs=lib_name)
+	    lib_flag<-library(package=lib_name,logical.return=TRUE,character.only=TRUE)
+	    if(!lib_flag) {
+	    	    stop(paste('\n please re-run the code\n',sep=''))
+	    }
 	  }
 	} 
 

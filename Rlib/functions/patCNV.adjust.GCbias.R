@@ -34,27 +34,30 @@ patCNV.adjust.GCbias <- function(session.info, covg.info,
   LR.sdelta <- small.delta
   log2RPKM.mtx <- log2(covg.info$exon_RPKM_mtx + LR.sdelta)
   log2.median.vec <- apply(log2RPKM.mtx, 1, median, na.rm = TRUE)
-  train.exon.idx <- which((log2.median.vec >= GC.train.min.log2RPKM) & ((session.info$exon_info$Chr!="chrX" & session.info$exon_info$Chr!="chrY") | session.info$exon_info$PAR==1))
+# GC vector can be NA is region of "N's"
+  train.exon.idx <- which( (!is.na(GC.vec)) & (log2.median.vec >= GC.train.min.log2RPKM) & ((session.info$exon_info$Chr!="chrX" & session.info$exon_info$Chr!="chrY") | session.info$exon_info$PAR==1))
   print(paste("training GC exons=",length(train.exon.idx),"\n",sep=""))
   crct.log2RPKM.mtx <- log2RPKM.mtx
   for(k in 1:N.sample){
     tmp.GC.train <- GC.vec[train.exon.idx]
     tmp.Cvg.train <- log2RPKM.mtx[train.exon.idx,k]
-    tmp.median.train <- median(tmp.Cvg.train)
+    tmp.median.train <- median(tmp.Cvg.train,na.rm=T)
     
     sspline.res <- smooth.spline( tmp.GC.train, tmp.Cvg.train, df = sspline.df)
     
     GC.slope.vec[k] <- 
-      diff(predict( sspline.res, GC.slope.range )$y) / diff(GC.slope.range)
+      diff(predict(sspline.res, GC.slope.range )$y) / diff(GC.slope.range)
     
     tmp.GC.cvg.range <- (range(predict( sspline.res, seq(GC.slope.range[1], GC.slope.range[2], length.out = 100) )$y))
     GC.maxmin.Difflog2R.vec[k] <- tmp.GC.cvg.range[2] - tmp.GC.cvg.range[1]
-
-    tmp.GC <- GC.vec
-    tmp.Cvg <- log2RPKM.mtx[,k]
+# NA for GC in regions on no genome coverage
+    notNA<-which(!is.na(GC.vec))
+    tmp.GC <- GC.vec[notNA]
+    tmp.Cvg <- log2RPKM.mtx[notNA,k]
 
     GC.predict.Cvg <- predict(sspline.res, tmp.GC)$y
-    crct.log2RPKM.mtx[, k ] <- ( tmp.Cvg / GC.predict.Cvg ) * tmp.median.train
+    print("Predicted")
+    crct.log2RPKM.mtx[notNA, k ] <- ( tmp.Cvg / GC.predict.Cvg ) * tmp.median.train
     print(paste(sampleids[k]," baseline shift= ",mean(crct.log2RPKM.mtx[train.exon.idx, k ]-tmp.Cvg.train),", slope=",GC.slope.vec[k],sep=""))
   }
   

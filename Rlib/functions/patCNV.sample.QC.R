@@ -24,12 +24,10 @@ patCNV.sample.QC <- function(session.info, covg.info,
   #sample.cormtx[! is.finite(sample.cormtx)] <- 0
 
   sample.median.corval <- apply(sample.cormtx,1,median, na.rm = TRUE)
-  
   outlier.sampleSet <- names(which(sample.median.corval < outlier.min.median.corval))
-  
   if(length(outlier.sampleSet)>0){
-    cat("patternCNV warning: likely outliers:\n",
-        paste(outlier.sampleSet,"\n"),"\n")  }
+    cat("patternCNV warning: likely outliers:\n",paste(outlier.sampleSet,"\n"),"\n")  
+  }
   
   sample.outlier.idx <- match(outlier.sampleSet, sampleID.vec)
   barplot.color <- rep("grey",length(sample.median.corval))
@@ -46,19 +44,23 @@ patCNV.sample.QC <- function(session.info, covg.info,
   
   
   approx.x <- seq(-5, 12, 0.5)
-  approx.density.mtx <- mat.or.vec( length(approx.x), N.sample)
+#  approx.density.mtx <- mat.or.vec( length(approx.x), N.sample)
+  approx.density.mtx <- matrix(0,nrow=length(approx.x), ncol=N.sample)
   rownames(approx.density.mtx) <- round(approx.x,digits = 2)
   colnames(approx.density.mtx) <- sampleID.vec
   
   pdf(paste(plot.output.DIR, output.prefix, "_QC_plot.pdf",sep = ""))
   
-  
-  hm <- heatmap.2(sample.cormtx,trace="none",col=bluered(25), 
+
+  if(length(sampleID.vec)>1) {  
+      hm <- heatmap.2(sample.cormtx,trace="none",col=bluered(25), 
             cexRow = heatmap.text.cex, cexCol = heatmap.text.cex,
             labRow = sampleID.vec, 
             labCol = sampleID.vec, 
             main = "pair-wise sample correlations")
-  
+  } else {
+    print("WARNING, Need multiple samples to perform outlier QC\n")
+  }
   order.sample.median.corval.idx <- order(sample.median.corval, decreasing = TRUE)
   barplot(sample.median.corval[order.sample.median.corval.idx], 
           names.arg = sampleID.vec[order.sample.median.corval.idx],
@@ -97,12 +99,15 @@ patCNV.sample.QC <- function(session.info, covg.info,
   
   approx.density.mtx.t <- t(approx.density.mtx)
   
-  if( ! all( approx.density.mtx.t[1,1] == approx.density.mtx.t) ){
+
+  if(N.sample>1) {  
+    if( ! all( approx.density.mtx.t[1,1] == approx.density.mtx.t) ){
 	cat("patternCNV warning: Values in log2(RPKM) density matrix are identical\n")
 	heatmap.2(as.matrix(t(approx.density.mtx)), main = "heatmap of log2(RPKM) densities",
-			  trace="none", Colv = FALSE, col = bluered(25),
+			  trace="none", Colv = TRUE, col = bluered(25),
               cexCol = 0.7, cexRow = 0.7)
-  }
+    }
+  } 
   
   dev.off()
   
@@ -116,10 +121,16 @@ patCNV.sample.QC <- function(session.info, covg.info,
               file = paste(plot.output.DIR, output.prefix, "_cor_matrix.txt",sep = ""),
               quote = FALSE, sep = "\t", row.names = TRUE) 
 
-  write.table(sample.cormtx[rev(hm$rowInd), hm$colInd],
+  if(length(sampleID.vec)>1) {  
+  	write.table(sample.cormtx[rev(hm$rowInd), hm$colInd],
               file = paste(plot.output.DIR, output.prefix, "_heatmap_cor_matrix.txt",sep = ""),
               quote = FALSE, sep = "\t", row.names = TRUE)
- 
+  } else {
+  	write.table(sample.cormtx,
+              file = paste(plot.output.DIR, output.prefix, "_heatmap_cor_matrix.txt",sep = ""),
+              quote = FALSE, sep = "\t", row.names = TRUE)
+}
+
   return(as.data.frame(sample.QC.mtx))
   
 }

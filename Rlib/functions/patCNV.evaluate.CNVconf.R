@@ -24,13 +24,23 @@ patCNV.evaluate.CNVconf <- function ( session.info, cnv.vec, SNR.vec,
 
   sel.SNR.idx <- which(tmp.SNR.vec >= min.fitting.SNR)
 
+#  print("tmp.SNR.vec\n")
+#  print(tmp.SNR.vec)
   SNR.quantile.interval <- quantile(tmp.SNR.vec[sel.SNR.idx],
                                     seq(0, 1, length.out = N.SNR.quantiles + 1))
 
   feature.SNR.interval.idx <- findInterval( tmp.SNR.vec[sel.SNR.idx],
                                             SNR.quantile.interval, rightmost.closed = TRUE)
 
+#  print(paste("min.fitting.SNR=",min.fitting.SNR,"\n",sep=""))
+#  print(paste("N.SNR.quantiles=",N.SNR.quantiles,"\n",sep=""))
+#  print(paste("length sel.SNR.idx=",length(sel.SNR.idx),"\n",sep=""))
 
+#  print("SNR.quantile.interval=\n")
+#  print(SNR.quantile.interval)
+#  print("tmp.SNR.vec[sel.SNR.idx]=\n")
+#  print(paste(tmp.SNR.vec[sel.SNR.idx],sep="\n"))
+#  print("\n\n")
   for(q in 1 : N.SNR.quantiles){
     sel.element.idx <-  sel.SNR.idx [which(feature.SNR.interval.idx == q)] 
 
@@ -48,6 +58,9 @@ patCNV.evaluate.CNVconf <- function ( session.info, cnv.vec, SNR.vec,
 
 	
  
+#print(paste("SNR.median len=",length(SNR.median),", NA SNR.median=",length(which(is.na(SNR.median))),"\n",sep=""))
+#print(paste("SNR.median len=",length(SNR.CNV.median),", NA SNR.CNV.median=",length(which(is.na(SNR.CNV.median))),"\n",sep=""))
+#print(paste("df = ", spline.df,"\n","\n",sep=""))
 
   sspline.medianCNV <-
     smooth.spline( SNR.median,  (SNR.CNV.median ), df = spline.df )

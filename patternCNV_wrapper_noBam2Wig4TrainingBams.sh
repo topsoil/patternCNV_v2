@@ -94,6 +94,30 @@ bedtools_path=$( cat $config | grep -w '^BEDTOOLS' | cut -d '=' -f2)
 email=$( cat $config | grep -w '^EMAIL' | cut -d '=' -f2)
 queue=$( cat $config | grep -w '^QUEUE' | cut -d '=' -f2)
 memory_exonkey=$( cat $config | grep -w '^QSUB_EXONKEY_MEMORY' | awk -F 'QSUB_EXONKEY_MEMORY=' '{print $2}')
+
+QSUB=""
+if [[ "${serial}" == "NO" ]] ; then 
+    QSUB=$( cat $config | grep -w '^QSUB' | awk -F 'QSUB=' '{print $2}')
+    if [[ ${#QSUB} -eq 0 ]] ; then  
+	QSUB="qsub"
+	echo "WARNING: In PatternCNV Wrapper, QSUB not defined in config file, trying to use one in path."
+    else
+	QSUBTEST=`which "${QSUB}"`
+	if [[ ${#QSUBTEST} -eq 0 ]] ; then 
+	    echo "ERROR: QSUB command ($QSUB) defined in config file, not found. Trying qsub in path"
+	    QSUB="qsub"
+	fi
+    fi
+    QSUBTEST=`which "${QSUB}"`
+    if [[ ${#QSUBTEST} -eq 0 ]] ; then 
+	echo "ERROR: PatternCNV Wrapper: Cannot find QSUB command (${QSUB}) in path, perhaps you need to run in serial mode (-s) for no cluster mode";
+	echo $(date)
+	echo "End PatternCNV Wrapper"
+	exit 127
+    fi
+fi
+
+
 memory_bam2wig=$( cat $config | grep -w '^QSUB_BAM2WIG_MEMORY' | awk -F 'QSUB_BAM2WIG_MEMORY=' '{print $2}')
 memory_callcnvs=$( cat $config | grep -w '^QSUB_CALLCNVS_MEMORY' | awk -F 'QSUB_CALLCNVS_MEMORY=' '{print $2}')
 
@@ -168,7 +192,7 @@ if [[ "$incremental" = "NO" || ( "$incremental" = "YES" && ! -f "$exon_key" ) ]]
         $pcnv_command
         echo -e "\n# PatternCNV ExonKey Job for all samples\n${pcnv_command}\n"
     else 
-	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_exonkey $previous_jobids -N $job_name.exon_key.allsamples${job_suffix} $pcnv_command"
+	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_exonkey $previous_jobids -N $job_name.exon_key.allsamples${job_suffix} $pcnv_command"
 	EXONKEY=$($qsub_command)
 	echo -e "\n# PatternCNV ExonKey Job Submission for all samples\n${qsub_command}"
 	echo -e "${EXONKEY}\n"
@@ -194,7 +218,7 @@ do
                 $pcnv_command
                 echo -e "# PatternCNV BAM2WIG Job for sample ${sample}\n${pcnv_command}\n"
 	    else
-		qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig $hold_jobid_exonkey  -N $job_name.bam2wig.${sample}${job_suffix} $pcnv_command"
+		qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig $hold_jobid_exonkey  -N $job_name.bam2wig.${sample}${job_suffix} $pcnv_command"
 		BAM2WIG=$($qsub_command)
 		echo -e "# PatternCNV BAM2WIG Job Submission for sample ${sample}\n${qsub_command}"
 		echo -e "${BAM2WIG}\n"
@@ -214,9 +238,9 @@ then
     echo -e "# PatternCNV CallCNVs Job for all samples\n${pcnv_command}\n"
 else
     if [[ ${#jobid_bam2wig} -gt 0 ]] ; then
-	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
     else 
-	qsub_command="qsub -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
     fi
     echo -e "# PatternCNV CallCNVs Job Submission for all samples\n${qsub_command}"
     CALLCNVS=$($qsub_command)

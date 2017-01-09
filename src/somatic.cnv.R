@@ -31,6 +31,11 @@ if(germline_count >= 3 & !anyDuplicated(germline_samples)){
 
 	print("#=== step 2(b) germline coverage QC")
 	germline.QC.res <- patCNV.sample.QC(session.info=somatic.sessionInfo, covg.info=germline.covg.res, output.prefix="Germline") 
+	sample.NOToutlier.idx<- which(germline.QC.res$is.outlier != 1)
+	if(length(sample.NOToutlier.idx)<=1) {
+		stop(paste("ERROR! Reference samples are not very similar, only found ",length(sample.NOToutlier.idx) ," samples not outliers out of ",
+		nrow(sample.QC.list) ," reference samples\n",sep=""))
+	}
 
 	print("#=== step 2(c) germline GC correction")
 	adj.germline.covg.res <- patCNV.adjust.GCbias(session.info=somatic.sessionInfo, covg.info=germline.covg.res, output.prefix="Germline")

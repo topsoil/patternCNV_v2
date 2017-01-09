@@ -44,7 +44,7 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
   haploid.subset<-which((session.info$exon_info$Chr=="chrX" | session.info$exon_info$Chr=="chrY"  ) & session.info$exon_info$PAR==0)
 
 
-  print(paste("sampleID.vec=",paste(sampleID.vec,sep="",collapse=","),sep=""))
+#  print(paste("sampleID.vec=",paste(sampleID.vec,sep="",collapse=","),sep=""))
 
   is.known.female.vec<-rep(FALSE,NSamples)
   is.known.male.vec<-rep(FALSE,NSamples)
@@ -60,7 +60,7 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
   }
   female.NOToutlier.idx<-female.sample.idx[which(female.sample.idx %in% sample.NOToutlier.idx)]
   male.NOToutlier.idx<-male.sample.idx[which(male.sample.idx %in% sample.NOToutlier.idx)]
-  print(paste(trueSex,sep="",collapse=","))
+#  print(paste(trueSex,sep="",collapse=","))
 
 
 # Set to NA known CNV on specific samples, to get 'cleaner' pattern
@@ -86,8 +86,17 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
     exon_count_mtx.masked<-covg.info$exon_count_mtx
   }
 
+  
   median.vec <- apply((exon_RPKM_mtx.masked[,sample.NOToutlier.idx,drop=F] ), 1, median,na.rm=T)
+#  median.vec <- apply((exon_RPKM_mtx.masked ), 1, median,na.rm=T)
+#  median.vec <- apply((exon_RPKM_mtx.masked[,,drop=F] ), 1, median,na.rm=T)
+
   MAD.vec <- apply((exon_RPKM_mtx.masked[,sample.NOToutlier.idx,drop=F] ), 1, mad,na.rm=T)
+#  MAD.vec <- apply((exon_RPKM_mtx.masked[,,drop=F] ), 1, mad,na.rm=T)
+#  MAD.vec <- apply((exon_RPKM_mtx.masked ), 1, mad,na.rm=T)
+
+#  print("MAD.vec")
+#  print(MAD.vec)
 
 # undo male correction,(doubling) so can perform sex check and better learn Sex Ratio
    if(length(male.sample.idx)>0){
@@ -418,12 +427,18 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
 # HS: on 12/08/2015 removed Extra 1.4825   SNR.ratio.vec <- (median.vec) / (1.4826 * (MAD.vec) + small.delta )
 #
   SNR.ratio.vec <- (median.vec) / (MAD.vec + small.delta )
+
+#  print("raw SNR.ratio.vec .. before fixing NA or taking log10\n")
+#  print(SNR.ratio.vec)
+
   if(length(which(is.na(SNR.ratio.vec)))>0){	# fill SNR == NA with min.SNR 
 	  min.SNR.ratio.val <- min(SNR.ratio.vec, na.rm=TRUE)
 	  SNR.ratio.vec[which(is.na(SNR.ratio.vec))] <- min.SNR.ratio.val
   }
 
+
   SNR.dB.vec <- 20 * log10( SNR.ratio.vec )
+
 
   mean.count.vec <- apply(exon_count_mtx.masked,1,mean, na.rm=TRUE)
 
