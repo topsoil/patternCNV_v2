@@ -46,7 +46,12 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
   exon.nmlz.RPKM.mtx <- covg.info$exon_RPKM_mtx
   rownames(exon.raw.count.mtx) <- rownames(exon.nmlz.RPKM.mtx) <- featureID.vec
   
+#  print(paste("Small delta=",small.delta,"\n",sep=""))
   for( k in 1 : N.sample){
+#    print("covg.info$exon_RPKM_mtx[,k]=\n")
+#    print(covg.info$exon_RPKM_mtx[,k])
+#    print("\n\n\n\npattern.list$median.RPKM=\n")
+#    print(pattern.list$median.RPKM)
     individual.CNV.vec <-
       log2(covg.info$exon_RPKM_mtx[,k] + small.delta) -
       log2(pattern.list$median.RPKM + small.delta)
@@ -64,6 +69,10 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
         width = 3e3, height = 1.5e3, res = 250)
 
     SNR.GEthreshold.idx <- which(pattern.list$SNR.dB >= SNR.dB.cut)
+
+#    print(paste("SNRdB.cut=",SNR.dB.cut,"\n",sep=""))
+#    print(paste("length(SNRGEthreshold.idx)=",SNR.GEthreshold.idx,"\n",sep=""))
+#    print(paste("individual.CNV.vec[SNRGEthreshold.idx]=",individual.CNV.vec[SNR.GEthreshold.idx],"\n",sep=""))
 
     sexString<-getSexTitleString(predicted.sex,known.sex,k)
 
