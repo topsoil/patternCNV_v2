@@ -88,7 +88,7 @@ if(!exists("X.FemalevsMale.ratio")) {
  
  #=== load sample_info
  cat('\n Loading sample information from \"', sample_info_file, '\"',sep='')
- file_info <- read.delim(sample_info_file,stringsAsFactors=FALSE,sep="\t")
+ file_info <- read.delim(sample_info_file,stringsAsFactors=FALSE,sep="\t", colClasses=c(rep("character", 6)))
  if("sex" %in% colnames(file_info)) {
     file_info$sex<-as.character(file_info$sex)
  }
