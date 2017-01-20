@@ -368,12 +368,12 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
      chrX.MAD.vec<-NULL
 
      if(length(female.index)>0) {
-        chrX.median.vec <- apply( (chrX.RPKM.mtx.masked[,female.index] ), 1, median,na.rm=T)
-        chrX.MAD.vec <- apply( (chrX.RPKM.mtx.masked[,female.index] ), 1, mad,na.rm=T)
+        chrX.median.vec <- apply( (chrX.RPKM.mtx.masked[,female.index,drop=F] ), 1, median,na.rm=T)
+        chrX.MAD.vec <- apply( (chrX.RPKM.mtx.masked[,female.index,drop=F] ), 1, mad,na.rm=T)
      } else {
         if(length(male.index)>0) {
-           chrX.median.vec <- apply( (chrX.RPKM.mtx.masked[,male.index] ), 1, median,na.rm=T)
-           chrX.MAD.vec <- apply( (chrX.RPKM.mtx.masked[,male.index] ), 1, mad,na.rm=T)
+           chrX.median.vec <- apply( (chrX.RPKM.mtx.masked[,male.index,drop=F] ), 1, median,na.rm=T)
+           chrX.MAD.vec <- apply( (chrX.RPKM.mtx.masked[,male.index,drop=F] ), 1, mad,na.rm=T)
         }
      }
 # Overwrite the X&Y chromosome count with the adjusted valued.
@@ -389,8 +389,8 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
        chrY.median.vec <- NULL
        chrY.MAD.vec <- NULL	   
        if(length(male.index)>0 && !is.null(male.index) && length(notPAR.Y.subset)>0){
-           chrY.median.vec <- apply(  chrY.RPKM.mtx.masked[,male.index] , 1, median,na.rm=T)
-      	   chrY.MAD.vec <- apply(  chrY.RPKM.mtx.masked[,male.index] , 1, mad,na.rm=T )
+           chrY.median.vec <- apply(  chrY.RPKM.mtx.masked[,male.index,drop=F] , 1, median,na.rm=T)
+      	   chrY.MAD.vec <- apply(  chrY.RPKM.mtx.masked[,male.index,drop=F] , 1, mad,na.rm=T )
        }
 
 # Overwrite the X&Y chromosome count with the adjusted valued.
