@@ -91,6 +91,9 @@ if(!exists("X.FemalevsMale.ratio")) {
  file_info <- read.delim(sample_info_file,stringsAsFactors=FALSE,sep="\t", colClasses=c(rep("character", 6)))
  if("sex" %in% colnames(file_info)) {
     file_info$sex<-as.character(file_info$sex)
+    file_info$sex[which(file_info$sex=="MAL")]<-"MALE"
+    file_info$sex[which(file_info$sex=="FEMAL")]<-"FEMALE"
+    file_info$sex[which(file_info$sex=="FEM")]<-"FEMALE"
  }
  file_info$ID <- paste(file_info$sample.name,'(',file_info$sample.type,')',sep='') # unique ID = name + type
 # New field.. should be file_info$sex
