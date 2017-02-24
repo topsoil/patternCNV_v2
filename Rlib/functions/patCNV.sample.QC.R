@@ -43,7 +43,8 @@ patCNV.sample.QC <- function(session.info, covg.info,
 
   
   
-  approx.x <- seq(-5, 12, 0.5)
+#  approx.x <- seq(-5, 12, 0.5) 
+  approx.x<-seq(floor(min(log2(covg.info$exon_RPKM_mtx+0.01),na.rm=T)),ceiling(max(log2(covg.info$exon_RPKM_mtx+0.01),na.rm=T)),0.5)
 #  approx.density.mtx <- mat.or.vec( length(approx.x), N.sample)
   approx.density.mtx <- matrix(0,nrow=length(approx.x), ncol=N.sample)
   rownames(approx.density.mtx) <- round(approx.x,digits = 2)
@@ -101,10 +102,11 @@ patCNV.sample.QC <- function(session.info, covg.info,
   
 
   if(N.sample>1) {  
-    if( ! all( approx.density.mtx.t[1,1] == approx.density.mtx.t) ){
-	cat("patternCNV warning: Values in log2(RPKM) density matrix are identical\n")
+    if(all( approx.density.mtx.t[1,1] == approx.density.mtx.t) ){
+	cat("patternCNV WARNING: Values in log2(RPKM) density matrix are identical\n")
+    } else {
 	heatmap.2(as.matrix(t(approx.density.mtx)), main = "heatmap of log2(RPKM) densities",
-			  trace="none", Colv = TRUE, col = bluered(25),
+			  trace="none", col = bluered(25),Colv=FALSE,dendrogram="row",
               cexCol = 0.7, cexRow = 0.7)
     }
   } 
