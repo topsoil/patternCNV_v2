@@ -45,6 +45,9 @@ patCNV.sample.QC <- function(session.info, covg.info,
   
 #  approx.x <- seq(-5, 12, 0.5) 
   approx.x<-seq(floor(min(log2(covg.info$exon_RPKM_mtx+0.01),na.rm=T)),ceiling(max(log2(covg.info$exon_RPKM_mtx+0.01),na.rm=T)),0.5)
+  if(length(approx.x)==1) {
+    approx.x<-c(approx.x[1]-0.5,approx.x[1],approx.x[1]+0.5)
+  }
 #  approx.density.mtx <- mat.or.vec( length(approx.x), N.sample)
   approx.density.mtx <- matrix(0,nrow=length(approx.x), ncol=N.sample)
   rownames(approx.density.mtx) <- round(approx.x,digits = 2)
