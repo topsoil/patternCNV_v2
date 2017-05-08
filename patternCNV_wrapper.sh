@@ -231,12 +231,12 @@ do
 	bamfile=$(basename $bam)
 	idxstatsfile="${output_dir}/bamstats/${bamfile}.idxstats"
 
-	pcnv_command="removeBamIndex=0; if [ ! -f ${bam}.bai ] ; then $samtools_path index $bam; removeBamIndex=1; fi;"
-	pcnv_command="$pcnv_command echo -e \"ref.seq.name\tref.seq.length\tnum.mapped.reads\tnum.unmapped.reads\" > $output_dir/${bamfile}.idxstats;"
-	pcnv_command="$pcnv_command $samtools_path idxstats $bam >> $output_dir/${bam_basename}.idxstats;"
-	pcnv_command="$pcnv_command if [ $removeBamIndex ] ; then rm $bam.bai; removeBamIndex=1; fi;"
+	pcnv_command="export removeBamIndex=0; if [ ! -f ${bam}.bai ] ; then $samtools_path index $bam; removeBamIndex=1; fi;"
+	pcnv_command="${pcnv_command} echo -e \"ref.seq.name\tref.seq.length\tnum.mapped.reads\tnum.unmapped.reads\" > $idxstatsfile;"
+	pcnv_command="${pcnv_command} $samtools_path idxstats $bam >> $idxstatsfile;"
+	pcnv_command="${pcnv_command} if [ \$removeBamIndex ] ; then rm $bam.bai; removeBamIndex=1; fi;"
 
-	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_bam2wig -N $job_name.idxstats.${sample}${job_suffix} $pcnv_command"
+	qsub_command="echo \"${pcnv_command}\" | ${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_bam2wig -N $job_name.idxstats.${sample}${job_suffix}"
 	IDXSTATS=$($qsub_command)
 	echo -e "# PatternCNV IDXSTATS Job Submission for sample ${sample}\n${qsub_command}"
 	echo -e "${IDXSTATS}\n"
@@ -253,9 +253,9 @@ then
     echo -e "# PatternCNV CallCNVs Job for all samples\n${pcnv_command}\n"
 else
     if [[ ${#jobid_bam2wig} -gt 0 ]] ; then
-	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_bam2wig   $hold_exonkey -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_idxstats $hold_exonkey -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
     else 
-	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs                            $hold_exonkey -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs $hold_exonkey -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
     fi
     echo -e "# PatternCNV CallCNVs Job Submission for all samples\n${qsub_command}"
     CALLCNVS=$($qsub_command)
