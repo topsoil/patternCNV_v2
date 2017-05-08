@@ -132,6 +132,7 @@ mkdir -p $output_dir/wigs
 mkdir -p $output_dir/configs
 mkdir -p $output_dir/cnv-txt
 mkdir -p $output_dir/cnv-plot
+mkdir -p $output_dir/bamstats
 
 # copy configs to output dir
 cat $config | grep -v "^EXON_KEY" | awk -F"=" -v out=$output_dir '{if($1 == "SAMPLE_INFO"){print "SAMPLE_INFO="out"/configs/sample_info.txt\nEXON_KEY="out"/configs/exon_key.txt"}else{print}}' > $output_dir/configs/config.txt
@@ -219,6 +220,28 @@ do
 		jobid_bam2wig="${jobid},${jobid_bam2wig}"
 	    fi
 	fi
+done
+
+
+# idxstats for each unique sample
+jobid_idxstats=""
+for sample in $(cut -f1 $sample_info | sed 1d | sort | uniq)
+do
+	bam=$(grep -P "^${sample}\t" $sample_info | head -1 | cut -f5)
+	bamfile=$(basename $bam)
+	idxstatsfile="${output_dir}/bamstats/${bamfile}.idxstats"
+
+	pcnv_command="removeBamIndex=0; if [ ! -f ${bam}.bai ] ; then $samtools_path index $bam; removeBamIndex=1; fi;"
+	pcnv_command="$pcnv_command echo -e \"ref.seq.name\tref.seq.length\tnum.mapped.reads\tnum.unmapped.reads\" > $output_dir/${bamfile}.idxstats;"
+	pcnv_command="$pcnv_command $samtools_path idxstats $bam >> $output_dir/${bam_basename}.idxstats;"
+	pcnv_command="$pcnv_command if [ $removeBamIndex ] ; then rm $bam.bai; removeBamIndex=1; fi;"
+
+	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_bam2wig -N $job_name.idxstats.${sample}${job_suffix} $pcnv_command"
+	IDXSTATS=$($qsub_command)
+	echo -e "# PatternCNV IDXSTATS Job Submission for sample ${sample}\n${qsub_command}"
+	echo -e "${IDXSTATS}\n"
+	jobid=$(echo $IDXSTATS | cut -d ' ' -f3)
+	jobid_idxstats="${jobid},${jobid_idxstats}"
 done
 
 
