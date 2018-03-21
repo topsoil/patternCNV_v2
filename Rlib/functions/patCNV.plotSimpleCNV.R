@@ -18,8 +18,8 @@ patCNV.plotSimpleCNV <- function( chr.vec, pos.vec, cnv.vec,
   ordered.chr.vec <- cnv.color.idx[order.idx]
   
   if(is.null(ylim)){ ylim <- range(ordered.cnv.vec) }
-  outliersLess<-which(cnv.vec< ylim[1])
-  outliersMore<-which(cnv.vec> ylim[2])
+  outliersLess<-which(ordered.cnv.vec< ylim[1])
+  outliersMore<-which(ordered.cnv.vec> ylim[2])
   
 
   plot(ordered.cnv.vec, 
