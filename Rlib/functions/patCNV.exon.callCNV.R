@@ -79,7 +79,7 @@ patCNV.exon.callCNV <- function(  session.info, covg.info, pattern.list,
     patCNV.plotSimpleCNV(chr.vec = session.info$exon_info$Chr[SNR.GEthreshold.idx],
                          pos.vec = session.info$exon_info$Start[SNR.GEthreshold.idx],
                          cnv.vec = individual.CNV.vec[SNR.GEthreshold.idx],
-                         main = paste("CNV plot of", individual.sample.ID,"\n",sexString),
+                         main = paste("CNV plot of", gsub('\\(Somatic\\)|\\(Germline\\)','',individual.sample.ID),"\n",sexString),
                          ylim = c(-3, 3))
 
     dev.off()
