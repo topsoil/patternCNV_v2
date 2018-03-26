@@ -43,6 +43,9 @@ if(!exists("YoverX.Klinefelter.cut")) {
 if(!exists("X.FemalevsMale.ratio")) {
    X.FemalevsMale.ratio<-2.0
 }
+if(!exists("rescaleX_useAllSamples")) {
+   rescaleX_useAllSamples<-FALSE
+}
 
  #=== DIR information
  DIR_info <- list()
@@ -200,7 +203,7 @@ exon_info$PAR=PAR
 
  res_list <- list(exon_info=exon_info,file_info=file_info,DIR_info=DIR_info,
  	     exon_info_mask=exon_info_mask,minSexExons=minSexExons,learn.Xratio=learn.Xratio,YoverX.ratio.cut=YoverX.ratio.cut,
-	     YoverX.Klinefelter.cut=YoverX.Klinefelter.cut,X.FemalevsMale.ratio=X.FemalevsMale.ratio)
+	     YoverX.Klinefelter.cut=YoverX.Klinefelter.cut,X.FemalevsMale.ratio=X.FemalevsMale.ratio,rescaleX_useAllSamples=rescaleX_useAllSamples)
 
 
  if(exists("avg_pattern_file")) 	
