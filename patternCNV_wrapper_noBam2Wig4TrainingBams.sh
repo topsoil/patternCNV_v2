@@ -30,6 +30,7 @@ OPTIONS:
 -l                      Optional path to logs folder if user doesn't want to use the default location
 -i                      Incremental mode, does not generate wigs or exon_key if they exist.
 -d			Debug mode. Keeps exon bed and bam2wig intermediate files.
+-r                      Use all samples to determine baseline for chrX. Default: Use only females to determine chrX baseline if available; use males if females unavailable
 -h                      print out this help message
 "
 exit 1;
@@ -43,8 +44,9 @@ merge_overlaps="YES"
 split_size=1000
 extension_buffer=100
 incremental="NO"
+rescaleX_useAllSamples="NO"
 
-while getopts "c:b:m:x:z:snvdij:w:u:l:h" opt; do
+while getopts "c:b:m:x:z:snvdij:w:u:l:r:h" opt; do
 	case $opt in
 		c) config=$OPTARG;;
 		b) bin_size=$OPTARG;;
@@ -60,6 +62,7 @@ while getopts "c:b:m:x:z:snvdij:w:u:l:h" opt; do
 		w) job_name_prefix=$OPTARG;;
 		u) job_name_suffix=$OPTARG;;
 		l) user_logs_output=$OPTARG;;
+		r) rescaleX_useAllSamples="YES";;
 		h) usage;;
 		\?) echo "See available options:" >&2
 		usage;;
@@ -150,6 +153,12 @@ echo "plot_output_DIR = '$output_dir/cnv-plot/'" > $output_dir/configs/config.in
 echo "txt_output_DIR = '$output_dir/cnv-txt/'" >> $output_dir/configs/config.ini
 echo "exon_key_file = '$exon_key'" >> $output_dir/configs/config.ini
 echo "sample_info_file = '$sample_info'" >> $output_dir/configs/config.ini
+if [ $rescaleX_useAllSamples == "YES" ]
+then
+	echo "rescaleX_useAllSamples = 'TRUE'" >> $output_dir/configs/config.ini
+else
+	echo "rescaleX_useAllSamples = 'FALSE'" >> $output_dir/configs/config.ini
+fi
 
 additional_params=""
 if [ $merge_overlaps == "NO" ]

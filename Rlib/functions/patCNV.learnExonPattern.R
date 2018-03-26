@@ -34,6 +34,7 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
   sample.NOToutlier.idx<- which(! (sampleID.vec %in% rownames(sample.QC.list)[which(sample.QC.list$is.outlier == 1)]))
   NSamples<-length(sampleID.vec) 
   X.FemalevsMale.ratio<-as.numeric(session.info$X.FemalevsMale.ratio)
+  rescaleX_useAllSamples <- as.logical(session.info$rescaleX_useAllSamples)
 
   wasAbleToSexCheck<-FALSE
 
@@ -375,15 +376,19 @@ patCNV.learnExonPattern <- function( session.info, covg.info,
 # Compute median for X&Y  probes
      chrX.median.vec<-NULL
      chrX.MAD.vec<-NULL
-
-     if(length(female.index)>0) {
-        chrX.median.vec <- apply( (chrX.RPKM.mtx.masked[,female.index,drop=F] ), 1, median,na.rm=T)
-        chrX.MAD.vec <- apply( (chrX.RPKM.mtx.masked[,female.index,drop=F] ), 1, mad,na.rm=T)
-     } else {
-        if(length(male.index)>0) {
-           chrX.median.vec <- apply( (chrX.RPKM.mtx.masked[,male.index,drop=F] ), 1, median,na.rm=T)
-           chrX.MAD.vec <- apply( (chrX.RPKM.mtx.masked[,male.index,drop=F] ), 1, mad,na.rm=T)
-        }
+     if(rescaleX_useAllSamples & (length(c(male.index,female.index))> 0) ){
+	chrX.median.vec <- apply( (chrX.RPKM.mtx.masked[,c(male.index,female.index),drop=F] ), 1, median,na.rm=T)
+        chrX.MAD.vec <- apply( (chrX.RPKM.mtx.masked[,c(male.index, female.index),drop=F] ), 1, mad,na.rm=T)
+     } else{
+     	if(length(female.index)>0) {
+        	chrX.median.vec <- apply( (chrX.RPKM.mtx.masked[,female.index,drop=F] ), 1, median,na.rm=T)
+	        chrX.MAD.vec <- apply( (chrX.RPKM.mtx.masked[,female.index,drop=F] ), 1, mad,na.rm=T)
+	} else {
+        	if(length(male.index)>0) {
+ 	          chrX.median.vec <- apply( (chrX.RPKM.mtx.masked[,male.index,drop=F] ), 1, median,na.rm=T)
+        	   chrX.MAD.vec <- apply( (chrX.RPKM.mtx.masked[,male.index,drop=F] ), 1, mad,na.rm=T)
+        	}
+     	}
      }
 # Overwrite the X&Y chromosome count with the adjusted valued.
 #
