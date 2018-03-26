@@ -46,7 +46,7 @@ extension_buffer=100
 incremental="NO"
 rescaleX_useAllSamples="NO"
 
-while getopts "c:b:m:x:z:snvdij:w:u:l:h" opt; do
+while getopts "c:b:m:x:z:snvdij:w:u:l:r:h" opt; do
 	case $opt in
 		c) config=$OPTARG;;
 		b) bin_size=$OPTARG;;
