@@ -23,6 +23,7 @@ OPTIONS:
 -t	config.txt	Tool config file (required)
 -e	Exon.Key.txt	Exon key file
 -n			Not to merge overlapping BED regions
+-g  Wait in grid on failure. i.e. set state to Eqw
 -d                      Debug mode. Keeps intermediate files.
 -h			print out this help message
 "
@@ -32,8 +33,9 @@ exit 1;
 # set defaults
 bin_size=10
 min_mapq=20
+EXIT_CODE=1
 
-while getopts "i:o:b:m:t:e:ndh" opt; do
+while getopts "i:o:b:m:t:e:ndhg" opt; do
 	case $opt in
 		i) input_bam=$OPTARG;;
 		o) output_dir=$OPTARG;;
@@ -43,6 +45,7 @@ while getopts "i:o:b:m:t:e:ndh" opt; do
 		e) exon_bed=$OPTARG;;
 		n) no_merge="YES";;
 		d) debug="YES";;
+        g) EXIT_CODE=100;;
 		h) usage;;
 		\?) echo "See available options:" >&2
 		usage;;
@@ -197,7 +200,7 @@ fi
 				echo -e "$MES" | mailx -s "$SUB" "$email"
 				sleep 15s
 			fi
-			exit 100;
+			exit ${EXIT_CODE};
 		fi
 	fi
 	gzip -f $output_dir/$filename.coverage.wig

@@ -16,6 +16,7 @@ USAGE:
 
 OPTIONS:
 -c	config.txt	config file (required)
+-g  Wait in grid on failure. i.e. set state to Eqw
 -v			Verbose logs for debugging
 -h			print out this help message
 "
@@ -24,10 +25,12 @@ exit 1;
 
 # default parameters
 verbose="NO"
+EXIT_CODE=1
 
-while getopts "c:vh" opt; do
+while getopts "c:gvh" opt; do
 	case $opt in
 		c) config=$OPTARG;;
+        g) EXIT_CODE=100;;
 		v) verbose="YES";;
 		h) usage;;
 		\?) echo "See available options:" >&2
@@ -85,7 +88,7 @@ then
 		echo -e "$MES" | mailx -s "$SUB" "$email"
 		sleep 15s
 	fi
-	exit 100;
+	exit ${EXIT_CODE};
 fi
 
 
