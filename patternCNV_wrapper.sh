@@ -31,6 +31,7 @@ OPTIONS:
 -i                      Incremental mode, does not generate wigs or exon_key if they exist.
 -d			Debug mode. Keeps exon bed and bam2wig intermediate files.
 -r                      Use all samples to determine baseline for chrX. Default: Use only females to determine chrX baseline if available; use males if females unavailable
+-g  Wait in grid on failure. i.e. set state to Eqw
 -h                      print out this help message
 "
 exit 1;
@@ -45,8 +46,9 @@ split_size=1000
 extension_buffer=100
 incremental="NO"
 rescaleX_useAllSamples="NO"
+EXIT_CODE_OPT=""
 
-while getopts "c:b:m:x:z:snvdij:w:u:l:r:h" opt; do
+while getopts "c:b:m:x:z:snvdij:w:u:l:r:gh" opt; do
 	case $opt in
 		c) config=$OPTARG;;
 		b) bin_size=$OPTARG;;
@@ -63,6 +65,7 @@ while getopts "c:b:m:x:z:snvdij:w:u:l:r:h" opt; do
 		u) job_name_suffix=$OPTARG;;
 		l) user_logs_output=$OPTARG;;
                 r) rescaleX_useAllSamples="YES";;
+        g) EXIT_CODE_OPT=" -g";;
 		h) usage;;
 		\?) echo "See available options:" >&2
 		usage;;
@@ -169,6 +172,7 @@ if [ "$debug" ]
 then
 	additional_params="${additional_params}-d "
 fi
+additional_params="${additional_params}${EXIT_CODE_OPT}"
 
 previous_jobids=""
 if [[ ${#jobs_to_hold_for} -gt 0 ]] ; then
@@ -255,7 +259,7 @@ done
 
 
 # call CNVs
-pcnv_command="${patterncnv_path}/src/call_cnvs.sh -c $config -v"
+pcnv_command="${patterncnv_path}/src/call_cnvs.sh -c $config -v ${EXIT_CODE_OPT}"
 if [ "$serial" == "YES" ]
 then
     $pcnv_command
