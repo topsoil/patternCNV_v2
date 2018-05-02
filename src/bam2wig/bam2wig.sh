@@ -33,7 +33,7 @@ exit 1;
 # set defaults
 bin_size=10
 min_mapq=20
-EXIT_CODE=1
+EXIT_CODE=100
 
 while getopts "i:o:b:m:t:e:ndhg" opt; do
 	case $opt in

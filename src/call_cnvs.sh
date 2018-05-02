@@ -25,7 +25,7 @@ exit 1;
 
 # default parameters
 verbose="NO"
-EXIT_CODE=1
+EXIT_CODE=100
 
 while getopts "c:gvh" opt; do
 	case $opt in
