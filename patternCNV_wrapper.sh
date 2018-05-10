@@ -238,18 +238,11 @@ done
 
 # idxstats for each unique sample
 jobid_idxstats=""
-for sample in $(cut -f1 $sample_info | sed 1d | sort | uniq)
+for sample in $(awk '{ if ($3=="Somatic") {print $1} }' $sample_info | sort | uniq)
 do
 	bam=$(grep -P "^${sample}\t" $sample_info | head -1 | cut -f5)
-	bamfile=$(basename $bam)
-	idxstatsfile="${output_dir}/bamstats/${bamfile}.idxstats"
-
-	pcnv_command="export removeBamIndex=0; if [ ! -f ${bam}.bai ] ; then $samtools_path index $bam; removeBamIndex=1; fi;"
-	pcnv_command="${pcnv_command} echo -e \"ref.seq.name\tref.seq.length\tnum.mapped.reads\tnum.unmapped.reads\" > $idxstatsfile;"
-	pcnv_command="${pcnv_command} $samtools_path idxstats $bam >> $idxstatsfile;"
-	pcnv_command="${pcnv_command} if [ \$removeBamIndex ] ; then rm $bam.bai; removeBamIndex=1; fi;"
-
-	qsub_command="echo \"${pcnv_command}\" | ${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_bam2wig -N $job_name.idxstats.${sample}${job_suffix}"
+	idxstats_command="$patterncnv_path/src/generate_idxstats.sh -c $config -i $bam -o $output_dir"
+	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_bam2wig -N $job_name.idxstats.${sample}${job_suffix} $idxstats_command"
 	IDXSTATS=$($qsub_command)
 	echo -e "# PatternCNV IDXSTATS Job Submission for sample ${sample}\n${qsub_command}"
 	echo -e "${IDXSTATS}\n"
