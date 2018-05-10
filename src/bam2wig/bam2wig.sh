@@ -193,7 +193,7 @@ fi
 			# send error email if mailx exists and exit 100:
 			mailx=`which mailx`
 			if [ "$mailx" != "" ] ; then
-				email=$(finger $USER | awk -F ';' '{print $2}' | head -n1)
+                email=$( cat $tool_config | grep -w '^EMAIL' | cut -d '=' -f2)
 				TMPDIR=$output_dir
 				SUB="PatternCNV Error in BAM2WIG script"
 				MES="PatternCNV ERROR! WIG line count (${wig_lines}) doesn't match expected count from exon key (${exon_key_lines}) in ${filename}.coverage.wig\n\nThis can occur when contigs in the BAM file reference don't match the contig names in the exon or capture BED files, either from different naming conventions or additional contigs in the BED files. e.g. chr1 vs 1\n\nSGE Log files:\n$SGE_STDERR_PATH\n$SGE_STDOUT_PATH\n\nFiles to check:\nBAM file:\n$input_bam\nExon Key:\n$exon_bed\nOutput Directory:\n$output_dir\n"

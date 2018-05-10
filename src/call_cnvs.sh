@@ -81,7 +81,7 @@ if [ $cnv_txt_count -le 0 -o $cnv_plot_count -le 0 ]
 then
 	mailx=$(which mailx)
 	if [ "$mailx" != "" ] ; then
-		email=$(finger $USER | awk -F ';' '{print $2}' | head -n1)
+        email=$( cat $config | grep -w '^EMAIL' | cut -d '=' -f2)
 		TMPDIR=$output_dir
 		SUB="PatternCNV Error in CALL_CNVS script"
 		MES="PatternCNV ERROR! After CNV calling the number of CNV txt files (${cnv_txt_count}) or CNV plot files (${cnv_plot_count}) are not correct.\n\nSGE Log files:\n$SGE_STDERR_PATH\n$SGE_STDOUT_PATH\n\nFiles to check:\nOutput Directory:\n$output_dir\n"

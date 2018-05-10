@@ -234,6 +234,7 @@ do
 	    fi
 	fi
 done
+echo "jobid_bam2wig: $jobid_bam2wig"
 
 
 # idxstats for each unique sample
@@ -256,6 +257,7 @@ do
 	jobid=$(echo $IDXSTATS | cut -d ' ' -f3)
 	jobid_idxstats="${jobid},${jobid_idxstats}"
 done
+echo "jobid_idxstats: $jobid_idxstats"
 
 
 # call CNVs
