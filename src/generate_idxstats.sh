@@ -101,8 +101,7 @@ fi
 
 if [[ ! -f $idxstatsfile ]]
 then
-	echo "ERROR! ${idxstatsfile} wasn't created"
-	exit ${EXIT_CODE};
+	echo "WARNING: ${idxstatsfile} wasn't created"
 else
 	echo "Finished creating idxstats file"
 	echo $(date)

@@ -138,7 +138,7 @@ mkdir -p $output_dir/wigs
 mkdir -p $output_dir/configs
 mkdir -p $output_dir/cnv-txt
 mkdir -p $output_dir/cnv-plot
-mkdir -p $output_dir/bamstats
+
 
 # copy configs to output dir
 cat $config | grep -v "^EXON_KEY" | awk -F"=" -v out=$output_dir '{if($1 == "SAMPLE_INFO"){print "SAMPLE_INFO="out"/configs/sample_info.txt\nEXON_KEY="out"/configs/exon_key.txt"}else{print}}' > $output_dir/configs/config.txt
@@ -243,7 +243,11 @@ for sample in $(awk '{ if ($3=="Somatic") {print $1} }' $sample_info | sort | un
 do
 	bam=$(grep -P "^${sample}\t" $sample_info | head -1 | cut -f5)
 	idxstats_command="$patterncnv_path/src/generate_idxstats.sh -c $config -i $bam -o $output_dir"
-	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_bam2wig -N $job_name.idxstats.${sample}${job_suffix} $idxstats_command"
+	if [[ ${#jobid_bam2wig} -gt 0 ]] ; then
+		qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig -hold_jid $jobid_bam2wig   $hold_exonkey -N $job_name.idxstats.${sample}${job_suffix} $idxstats_command"
+	else
+		qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_bam2wig                            $hold_exonkey -N $job_name.idxstats.${sample}${job_suffix} $idxstats_command"
+	fi
 	IDXSTATS=$($qsub_command)
 	echo -e "# PatternCNV IDXSTATS Job Submission for sample ${sample}\n${qsub_command}"
 	echo -e "${IDXSTATS}\n"
@@ -260,10 +264,10 @@ then
     $pcnv_command
     echo -e "# PatternCNV CallCNVs Job for all samples\n${pcnv_command}\n"
 else
-    if [[ ${#jobid_bam2wig} -gt 0 ]] ; then
-	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_idxstats $hold_exonkey -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+    if [[ ${#jobid_idxstats} -gt 0 ]] ; then
+	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs -hold_jid $jobid_idxstats   $hold_exonkey -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
     else 
-	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs $hold_exonkey -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
+	qsub_command="${QSUB} -wd $logs_dir -q $queue -m a -M $email $memory_callcnvs                             $hold_exonkey -N $job_name.call_cnvs.allsamples${job_suffix} $pcnv_command"
     fi
     echo -e "# PatternCNV CallCNVs Job Submission for all samples\n${qsub_command}"
     CALLCNVS=$($qsub_command)
@@ -272,11 +276,4 @@ fi
 
 echo "End PatternCNV Wrapper"
 echo $(date)
-
-
-
-
-
-
-
 
